@@ -15,11 +15,14 @@ class ServiceCaller implements InvocationHandler {
 
   private final Logger logger;
 
+  private volatile boolean valid;
+
   
   ServiceCaller(Object serviceProxy, ClassLoader classLoader, Logger logger) {
     this.serviceProxy = serviceProxy;
     this.classLoader = classLoader;
     this.logger = logger;
+    this.valid = true;
   }
 
   @Override
@@ -28,7 +31,11 @@ class ServiceCaller implements InvocationHandler {
     ClassLoader oldContextClassLoader = currentThread.getContextClassLoader();
     currentThread.setContextClassLoader(this.classLoader);
     try {
-      return method.invoke(method, args);
+      if (!this.valid) {
+        throw new IllegalStateException("service is no longer valid");
+      }
+      return method.invoke(this.serviceProxy, args);
+      // javax.security.sasl.SaslException
     } catch (Throwable /* JBossRemotingException */ t) {
       // TODO service reference
       String message = "service call " + method.getDeclaringClass().getName() + "#" + method.getName() + "() failed";
@@ -40,8 +47,7 @@ class ServiceCaller implements InvocationHandler {
   }
 
   void invalidate() {
-    // TODO Auto-generated method stub
-    
+    this.valid = false;
   }
 
 

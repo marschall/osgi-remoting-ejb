@@ -1,0 +1,10 @@
+<service-descriptions xmlns="http://www.osgi.org/xmlns/sd/v1.0.0">
+  <service-description>
+    <provide interface="org.apache.cxf.dosgi.samples.greeter.GreeterService" />
+    <property name="osgi.remote.interfaces">*</property>
+    <property name="osgi.remote.configuration.type">pojo</property>
+    <property name="osgi.remote.configuration.pojo.address">http://localhost:9090/greeter</property>
+  </service-description>
+
+  <!-- further service-description tags are allowed here -->
+</service-descriptions>

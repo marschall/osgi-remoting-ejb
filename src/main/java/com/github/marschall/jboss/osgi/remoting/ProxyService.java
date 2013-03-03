@@ -8,10 +8,13 @@ import static javax.xml.stream.XMLInputFactory.SUPPORT_DTD;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Proxy;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Dictionary;
+import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Properties;
@@ -28,15 +31,15 @@ import org.osgi.framework.BundleListener;
 import org.osgi.framework.ServiceRegistration;
 
 final class ProxyService implements BundleListener {
-  
+
   private final ConcurrentMap<Bundle, BundleProxyContext> contexts;
-  
+
   private final XMLInputFactory inputFactory;
 
   private final BundleContext bundleContext;
 
   private final Logger logger;
-  
+
 
   ProxyService(BundleContext bundleContext, Logger logger) {
     this.bundleContext = bundleContext;
@@ -55,7 +58,7 @@ final class ProxyService implements BundleListener {
     factory.setProperty(SUPPORT_DTD, Boolean.FALSE);
     return factory;
   }
-  
+
   void initialBundles(Bundle[] bundles) {
     for (Bundle bundle : bundles) {
       int bundleState = bundle.getState();
@@ -64,28 +67,64 @@ final class ProxyService implements BundleListener {
       }
     }
   }
-  
+
+  private String getResourceLocation(Bundle bundle) {
+    // http://cxf.apache.org/distributed-osgi-reference.html
+    Dictionary<String,String> headers = bundle.getHeaders();
+    String remoteServiceHeader = headers.get("Remote-Service");
+    if (remoteServiceHeader != null) {
+      return remoteServiceHeader;
+    } else {
+      return "OSGI-INF/remote-service";
+    }
+  }
+
+  private List<URL> getServiceUrls(Bundle bundle) {
+    Enumeration<URL> resources = bundle.getResources("OSGI-INF/remote-service");
+    if (resources != null && resources.hasMoreElements()) {
+      List<URL> serviceXmls = new ArrayList<URL>(1);
+      while (resources.hasMoreElements()) {
+        URL nextElement = resources.nextElement();
+        if (nextElement.getFile().endsWith(".xml")) {
+          serviceXmls.add(nextElement);
+        }
+      }
+      return serviceXmls;
+    } else {
+      return Collections.emptyList();
+    }
+
+  }
+
   void addPotentialBundle(Bundle bundle) {
     // TODO check
-    URL serviceXml = bundle.getResource("OSGI-INF/services/service.xml");
-    if (serviceXml != null) {
-      ParseResult result = this.parseServiceXml(serviceXml);
-      
-      if (!result.isEmpty()) {
-        // TODO parent = this parent?
-        ClassLoader classLoader = new BundleProxyClassLoader(bundle);
-        Collection<ServiceCaller> callers = new ArrayList<ServiceCaller>(result.size());
-        Collection<ServiceRegistration<?>> registrations = new ArrayList<ServiceRegistration<?>>(result.size());
-        for (ServiceInfo info : result.services) {
-          Class<?> interfaceClazz = classLoader.loadClass(info.interfaceName);
-          Object jBossProxy = this.lookUpJBossProxy(interfaceClazz, info.jndiName);
-          ServiceCaller serviceCaller = new ServiceCaller(jBossProxy, classLoader);
-          callers.add(serviceCaller);
-          // TODO properties
-          Dictionary<String, Object> properties = new Hashtable<String, Object>();
-          ServiceRegistration<?> serviceRegistration = this.bundleContext.registerService(info.interfaceName, serviceCaller, properties);
-          registrations.add(serviceRegistration);
+    List<URL> serviceUrls = this.getServiceUrls(bundle);
+    if (!serviceUrls.isEmpty()) {
+      // TODO parent = this parent?
+      ClassLoader classLoader = new BundleProxyClassLoader(bundle);
+      ArrayList<ServiceCaller> callers = new ArrayList<ServiceCaller>();
+      ArrayList<ServiceRegistration<?>> registrations = new ArrayList<ServiceRegistration<?>>();
+      for (URL serviceXml : serviceUrls) {
+        ParseResult result = this.parseServiceXml(serviceXml);
+        if (!result.isEmpty()) {
+          for (ServiceInfo info : result.services) {
+            Class<?> interfaceClazz = classLoader.loadClass(info.interfaceName);
+            Object jBossProxy = this.lookUpJBossProxy(interfaceClazz, info.jndiName);
+            ServiceCaller serviceCaller = new ServiceCaller(jBossProxy, classLoader, this.logger);
+            Object service = Proxy.newProxyInstance(classLoader, new Class[]{interfaceClazz}, serviceCaller);
+            callers.add(serviceCaller);
+            // TODO properties
+            Dictionary<String, Object> properties = new Hashtable<String, Object>();
+            properties.put("service.imported", true);
+            ServiceRegistration<?> serviceRegistration = this.bundleContext.registerService(info.interfaceName, service, properties);
+            registrations.add(serviceRegistration);
+          }
         }
+      }
+
+      if (!callers.isEmpty() && !registrations.isEmpty()) {
+        callers.trimToSize();
+        registrations.trimToSize();
         BundleProxyContext bundleProxyContext = new BundleProxyContext(callers, registrations);
         // prevent double registration is case of concurrent call by listener and initial list
         BundleProxyContext previous = this.contexts.putIfAbsent(bundle, bundleProxyContext);
@@ -96,12 +135,12 @@ final class ProxyService implements BundleListener {
       }
     }
   }
-  
+
   private Object lookUpJBossProxy(Class<?> interfaceClazz, String jndiName) {
     Object proxy = null;
     return interfaceClazz.cast(proxy);
   }
-  
+
   private ParseResult parseServiceXml(URL serviceXml) {
     InputStream stream = serviceXml.openStream();
     try {
@@ -127,23 +166,23 @@ final class ProxyService implements BundleListener {
       context.unregisterServices(bundleContext);
     }
   }
-  
+
   @Override
   public void bundleChanged(BundleEvent event) {
     int eventType = event.getType();
     switch (eventType) {
-      // TODO installed? uninstalled? started? resolved?
-      case BundleEvent.STARTING:
-        this.addPotentialBundle(event.getBundle());
-        break;
-      case BundleEvent.STOPPING: 
-        this.removePotentialBundle(event.getBundle());
-        break;
-      
+    // TODO installed? uninstalled? started? resolved?
+    case BundleEvent.STARTING:
+      this.addPotentialBundle(event.getBundle());
+      break;
+    case BundleEvent.STOPPING: 
+      this.removePotentialBundle(event.getBundle());
+      break;
+
     }
-    
+
   }
-  
+
 
   void stop() {
     for (BundleProxyContext context : this.contexts.values()) {
@@ -151,60 +190,60 @@ final class ProxyService implements BundleListener {
       context.unregisterServices(bundleContext);
     }
   }
-  
+
   static final class ParseResult {
-    
+
     final List<ServiceInfo> services;
 
     ParseResult(List<ServiceInfo> services) {
       this.services = services;
     }
-    
+
     boolean isEmpty() {
       return this.services.isEmpty();
     }
-    
+
     int size() {
       return this.services.size();
     }
-    
+
   }
-  
+
   static final class ServiceInfo {
-    
+
     final String interfaceName;
     final String jndiName;
-    
+
     ServiceInfo(String interfaceName, String jndiName) {
       this.interfaceName = interfaceName;
       this.jndiName = jndiName;
     }
-    
+
   }
-  
+
   static final class BundleProxyContext {
-    
+
     private final Collection<ServiceCaller> callers;
-    
+
     private final Collection<ServiceRegistration<?>> registrations;
 
     BundleProxyContext(Collection<ServiceCaller> callers, Collection<ServiceRegistration<?>> registrations) {
       this.callers = callers;
       this.registrations = registrations;
     }
-    
+
     void unregisterServices(BundleContext bundleContext) {
       for (ServiceRegistration<?> registration : this.registrations) {
         bundleContext.ungetService(registration.getReference());
       }
     }
-    
+
     void invalidateCallers() {
       for (ServiceCaller caller : callers) {
         caller.invalidate();
       }
     }
-    
+
   }
 
 
