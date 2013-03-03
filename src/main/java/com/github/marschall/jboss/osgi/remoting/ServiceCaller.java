@@ -13,10 +13,13 @@ class ServiceCaller implements InvocationHandler {
   
   private final ClassLoader classLoader;
 
+  private final Logger logger;
+
   
-  ServiceCaller(Object serviceProxy, ClassLoader classLoader) {
+  ServiceCaller(Object serviceProxy, ClassLoader classLoader, Logger logger) {
     this.serviceProxy = serviceProxy;
     this.classLoader = classLoader;
+    this.logger = logger;
   }
 
   @Override
@@ -25,11 +28,12 @@ class ServiceCaller implements InvocationHandler {
     ClassLoader oldContextClassLoader = currentThread.getContextClassLoader();
     currentThread.setContextClassLoader(this.classLoader);
     try {
-      // TODO switch TCCL
       return method.invoke(method, args);
     } catch (Throwable /* JBossRemotingException */ t) {
-      // TODO log
-      throw new ServiceException("service call failed", REMOTE, t);
+      // TODO service reference
+      String message = "service call " + method.getDeclaringClass().getName() + "#" + method.getName() + "() failed";
+      this.logger.error(message, t);
+      throw new ServiceException(message, REMOTE, t);
     } finally {
       currentThread.setContextClassLoader(oldContextClassLoader);
     }

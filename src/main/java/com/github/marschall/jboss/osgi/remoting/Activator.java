@@ -7,11 +7,13 @@ import org.osgi.framework.BundleContext;
 public class Activator implements BundleActivator {
   
   private volatile ProxyService proxyService;
+  private volatile Logger logger;
 
   @Override
   public void start(BundleContext context) throws Exception {
-    this.proxyService = new ProxyService(context);
-    context.removeBundleListener(this.proxyService);
+    this.logger = new Logger(context);
+    this.proxyService = new ProxyService(context, this.logger);
+    context.addBundleListener(this.proxyService);
     
     Bundle[] bundles = context.getBundles();
     this.proxyService.initialBundles(bundles);
@@ -20,7 +22,11 @@ public class Activator implements BundleActivator {
   @Override
   public void stop(BundleContext context) throws Exception {
     context.removeBundleListener(this.proxyService);
+    this.proxyService.stop();
+    this.logger.stop();
+    
     this.proxyService = null;
+    this.logger = null;
   }
 
 }

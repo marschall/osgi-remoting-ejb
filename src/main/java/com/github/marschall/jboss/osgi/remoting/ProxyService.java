@@ -34,10 +34,13 @@ final class ProxyService implements BundleListener {
   private final XMLInputFactory inputFactory;
 
   private final BundleContext bundleContext;
+
+  private final Logger logger;
   
 
-  ProxyService(BundleContext bundleContext) {
+  ProxyService(BundleContext bundleContext, Logger logger) {
     this.bundleContext = bundleContext;
+    this.logger = logger;
     this.contexts = new ConcurrentHashMap<Bundle, BundleProxyContext>();
     this.inputFactory = this.createInputFactory();
   }
@@ -84,7 +87,12 @@ final class ProxyService implements BundleListener {
           registrations.add(serviceRegistration);
         }
         BundleProxyContext bundleProxyContext = new BundleProxyContext(callers, registrations);
-        this.contexts.put(bundle, bundleProxyContext);
+        // prevent double registration is case of concurrent call by listener and initial list
+        BundleProxyContext previous = this.contexts.putIfAbsent(bundle, bundleProxyContext);
+        if (previous != null) {
+          // undo registration
+          bundleProxyContext.unregisterServices(this.bundleContext);
+        }
       }
     }
   }
@@ -134,6 +142,14 @@ final class ProxyService implements BundleListener {
       
     }
     
+  }
+  
+
+  void stop() {
+    for (BundleProxyContext context : this.contexts.values()) {
+      context.invalidateCallers();
+      context.unregisterServices(bundleContext);
+    }
   }
   
   static final class ParseResult {
@@ -190,5 +206,6 @@ final class ProxyService implements BundleListener {
     }
     
   }
+
 
 }

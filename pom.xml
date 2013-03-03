@@ -63,7 +63,14 @@
     <dependency>
       <groupId>org.osgi</groupId>
       <artifactId>org.osgi.core</artifactId>
-      <version>4.3.0</version>
+      <version>${osgi.version}</version>
+      <!-- will be only used in OSGi environment where import-package will kick in -->
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.osgi</groupId>
+      <artifactId>org.osgi.enterprise</artifactId>
+      <version>${osgi.version}</version>
       <!-- will be only used in OSGi environment where import-package will kick in -->
       <scope>provided</scope>
     </dependency>
@@ -152,6 +159,8 @@
           <instructions>
             <Import-Package>
               org.osgi.framework;version="[1.0.0,2.0.0)",
+              org.osgi.util.tracker,
+              org.osgi.service.log;resolution:=optional,
               javax.annotation;resolution:=optional,
               javax.xml.stream
             </Import-Package>
@@ -278,6 +287,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <java.version>1.6</java.version>
+    <osgi.version>5.0.0</osgi.version>
   </properties>
 
 </project>
