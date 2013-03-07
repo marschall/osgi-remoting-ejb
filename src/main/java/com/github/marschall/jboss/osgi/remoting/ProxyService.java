@@ -144,41 +144,61 @@ final class ProxyService implements BundleListener {
         return;
       }
 
-      // ---
-
       ParseResult result = ParseResult.flatten(results);
+      this.registerServices(bundle, result);
+    }
+  }
 
-      ClassLoader classLoader = createClassLoader(bundle);
-      List<ServiceCaller> callers = new ArrayList<ServiceCaller>(result.size());
-      List<ServiceRegistration<?>> registrations = new ArrayList<ServiceRegistration<?>>(result.size());
-      Context namingContext = this.createNamingContext();
+  void registerServices(Bundle bundle, ParseResult result) {
+    ClassLoader classLoader = createClassLoader(bundle);
+    List<ServiceCaller> callers = new ArrayList<ServiceCaller>(result.size());
+    List<ServiceRegistration<?>> registrations = new ArrayList<ServiceRegistration<?>>(result.size());
+    Context namingContext;
+    try {
+      namingContext = this.createNamingContext();
+    } catch (NamingException e) {
+      // there isn't really anything anybody can do
+      // but we shouldn't pump exception into the OSGi framework
+      this.logger.warning("could not register bundle: " + bundle, e);
+      return;
+    }
 
-      for (ServiceInfo info : result.services) {
-        Class<?> interfaceClazz;
-        try {
-          interfaceClazz = classLoader.loadClass(info.interfaceName);
-        } catch (ClassNotFoundException e) {
-          this.logger.warning("failed to load interface class: " + info.interfaceName + " remote service will not be available", e);
-          continue;
-        }
-        Object jBossProxy = this.lookUpJBossProxy(interfaceClazz, info.jndiName, namingContext);
-        ServiceCaller serviceCaller = new ServiceCaller(jBossProxy, classLoader, this.logger);
-        Object service = Proxy.newProxyInstance(classLoader, new Class[]{interfaceClazz}, serviceCaller);
-        callers.add(serviceCaller);
-        // TODO properties
-        Dictionary<String, Object> properties = new Hashtable<String, Object>();
-        properties.put("service.imported", true);
-        ServiceRegistration<?> serviceRegistration = this.bundleContext.registerService(info.interfaceName, service, properties);
-        registrations.add(serviceRegistration);
+    for (ServiceInfo info : result.services) {
+      Class<?> interfaceClazz;
+      Object jBossProxy;
+      try {
+        interfaceClazz = classLoader.loadClass(info.interfaceName);
+        jBossProxy = this.lookUpJBossProxy(interfaceClazz, info.jndiName, namingContext);
+      } catch (ClassNotFoundException e) {
+        this.logger.warning("failed to load interface class: " + info.interfaceName
+            + ", remote service will not be available", e);
+        continue;
+      } catch (NamingException e) {
+        this.logger.warning("failed to look up interface class: " + info.interfaceName
+            + " with JNDI name: " + info.jndiName
+            + ", remote service will not be available", e);
+        continue;
+      } catch (ClassCastException e) {
+        this.logger.warning("failed to load interface class: " + info.interfaceName
+            + ", remote service will not be available", e);
+        continue;
       }
+      ServiceCaller serviceCaller = new ServiceCaller(jBossProxy, classLoader, this.logger);
+      Object service = Proxy.newProxyInstance(classLoader, new Class[]{interfaceClazz}, serviceCaller);
+      callers.add(serviceCaller);
+      // TODO properties
+      Dictionary<String, Object> properties = new Hashtable<String, Object>();
+      properties.put("service.imported", true);
+      ServiceRegistration<?> serviceRegistration = this.bundleContext.registerService(info.interfaceName, service, properties);
+      registrations.add(serviceRegistration);
+    }
 
-      BundleProxyContext bundleProxyContext = new BundleProxyContext(namingContext, callers, registrations);
-      // prevent double registration is case of concurrent call by listener and initial list
-      BundleProxyContext previous = this.contexts.putIfAbsent(bundle, bundleProxyContext);
-      if (previous != null) {
-        // undo registration
-        bundleProxyContext.unregisterServices(this.bundleContext);
-      }
+    BundleProxyContext bundleProxyContext = new BundleProxyContext(namingContext, callers, registrations);
+    // prevent double registration is case of concurrent call by listener and initial list
+    BundleProxyContext previous = this.contexts.putIfAbsent(bundle, bundleProxyContext);
+    if (previous != null) {
+      // undo registration
+      bundleProxyContext.unregisterServices(this.bundleContext);
     }
   }
 
@@ -188,7 +208,8 @@ final class ProxyService implements BundleListener {
     return classLoader;
   }
 
-  private Object lookUpJBossProxy(Class<?> interfaceClazz, String jndiName, Context namingContext) {
+  private Object lookUpJBossProxy(Class<?> interfaceClazz, String jndiName, Context namingContext)
+       throws NamingException, ClassCastException {
     Object proxy = namingContext.lookup(jndiName);
     return interfaceClazz.cast(proxy);
   }
@@ -211,7 +232,7 @@ final class ProxyService implements BundleListener {
 
   }
 
-  private Context createNamingContext() {
+  private Context createNamingContext() throws NamingException {
     Properties jndiProps = new Properties();
     jndiProps.put(Context.INITIAL_CONTEXT_FACTORY, "org.jboss.naming.remote.client.InitialContextFactory");
     // TODO configure
@@ -223,7 +244,13 @@ final class ProxyService implements BundleListener {
   void removePotentialBundle(Bundle bundle) {
     BundleProxyContext context = this.contexts.remove(bundle);
     if (context != null) {
-      context.release(bundleContext);
+      try {
+        context.release(bundleContext);
+      } catch (NamingException e) {
+        // there isn't really anything anybody can do
+        // but we shouldn't pump exception into the OSGi framework
+        this.logger.warning("could not unregister bundle: " + bundle, e);
+      }
     }
   }
 
@@ -245,7 +272,14 @@ final class ProxyService implements BundleListener {
 
   void stop() {
     for (BundleProxyContext context : this.contexts.values()) {
-      context.release(bundleContext);
+      try {
+        context.release(bundleContext);
+      } catch (NamingException e) {
+        // there isn't really anything anybody can do
+        // but we shouldn't pump exception into the OSGi framework
+        // and we should continue the loop
+        this.logger.warning("could not unregister service", e);
+      }
     }
   }
 
