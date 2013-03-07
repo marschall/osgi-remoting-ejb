@@ -21,6 +21,8 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import javax.naming.Context;
+import javax.naming.InitialContext;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamReader;
 
@@ -31,6 +33,14 @@ import org.osgi.framework.BundleListener;
 import org.osgi.framework.ServiceRegistration;
 
 final class ProxyService implements BundleListener {
+  
+  /**
+   * The symbolic names of the bundles that have to be added to the
+   * class loader of each client bundle. This contains the classes need
+   * by jboss-remoting, not the classes need by the client bundle. Those
+   * should be dealt with by the manifest of the client bundle. 
+   */
+  private static final String[] PARENT_BUNDLE_IDS = {};
 
   private final ConcurrentMap<Bundle, BundleProxyContext> contexts;
 
@@ -39,6 +49,8 @@ final class ProxyService implements BundleListener {
   private final BundleContext bundleContext;
 
   private final Logger logger;
+  
+  private final List<Bundle> parentBundles;
 
 
   ProxyService(BundleContext bundleContext, Logger logger) {
@@ -80,7 +92,14 @@ final class ProxyService implements BundleListener {
   }
 
   private List<URL> getServiceUrls(Bundle bundle) {
-    Enumeration<URL> resources = bundle.getResources("OSGI-INF/remote-service");
+    String resourceLocation = this.getResourceLocation(bundle);
+    Enumeration<URL> resources;
+    try {
+      resources = bundle.getResources(resourceLocation);
+    } catch (IOException e) {
+      this.logger.warning("failed to access location '" + resourceLocation + "' in bundle: " + bundle);
+      return Collections.emptyList();
+    }
     if (resources != null && resources.hasMoreElements()) {
       List<URL> serviceXmls = new ArrayList<URL>(1);
       while (resources.hasMoreElements()) {
@@ -100,15 +119,20 @@ final class ProxyService implements BundleListener {
     // TODO check
     List<URL> serviceUrls = this.getServiceUrls(bundle);
     if (!serviceUrls.isEmpty()) {
-      // TODO parent = this parent?
-      ClassLoader classLoader = new BundleProxyClassLoader(bundle);
+      ClassLoader classLoader = createClassLoader(bundle);
       ArrayList<ServiceCaller> callers = new ArrayList<ServiceCaller>();
       ArrayList<ServiceRegistration<?>> registrations = new ArrayList<ServiceRegistration<?>>();
       for (URL serviceXml : serviceUrls) {
         ParseResult result = this.parseServiceXml(serviceXml);
         if (!result.isEmpty()) {
           for (ServiceInfo info : result.services) {
-            Class<?> interfaceClazz = classLoader.loadClass(info.interfaceName);
+            Class<?> interfaceClazz;
+            try {
+              interfaceClazz = classLoader.loadClass(info.interfaceName);
+            } catch (ClassNotFoundException e) {
+              this.logger.warning("failed to load interface class: " + info.interfaceName + " remote service will not be available", e);
+              continue;
+            }
             Object jBossProxy = this.lookUpJBossProxy(interfaceClazz, info.jndiName);
             ServiceCaller serviceCaller = new ServiceCaller(jBossProxy, classLoader, this.logger);
             Object service = Proxy.newProxyInstance(classLoader, new Class[]{interfaceClazz}, serviceCaller);
@@ -136,6 +160,12 @@ final class ProxyService implements BundleListener {
     }
   }
 
+  ClassLoader createClassLoader(Bundle bundle) {
+    SuffixList<Bundle> bundles = new SuffixList<Bundle>(this.parentBundles, bundle);
+    ClassLoader classLoader = new BundlesProxyClassLoader(bundles);
+    return classLoader;
+  }
+  
   private Object lookUpJBossProxy(Class<?> interfaceClazz, String jndiName) {
     Object proxy = null;
     return interfaceClazz.cast(proxy);
@@ -157,6 +187,15 @@ final class ProxyService implements BundleListener {
       stream.close();
     }
 
+  }
+  
+  private InitialContext createInitialContext() {
+    Properties jndiProps = new Properties();
+    jndiProps.put(Context.INITIAL_CONTEXT_FACTORY, "org.jboss.naming.remote.client.InitialContextFactory");
+    // TODO configure
+    jndiProps.put(Context.PROVIDER_URL,"remote://localhost:4447");
+    // create a context passing these properties
+    Context ctx = new InitialContext(jndiProps);
   }
 
   void removePotentialBundle(Bundle bundle) {
@@ -182,7 +221,6 @@ final class ProxyService implements BundleListener {
     }
 
   }
-
 
   void stop() {
     for (BundleProxyContext context : this.contexts.values()) {
