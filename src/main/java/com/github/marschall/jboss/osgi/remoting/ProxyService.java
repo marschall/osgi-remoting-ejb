@@ -34,7 +34,7 @@ import org.osgi.framework.BundleListener;
 import org.osgi.framework.ServiceRegistration;
 
 final class ProxyService implements BundleListener {
-  
+
   /**
    * The symbolic names of the bundles that have to be added to the
    * class loader of each client bundle. This contains the classes need
@@ -63,7 +63,7 @@ final class ProxyService implements BundleListener {
   private final BundleContext bundleContext;
 
   private final Logger logger;
-  
+
   private final List<Bundle> parentBundles;
 
 
@@ -133,43 +133,51 @@ final class ProxyService implements BundleListener {
     // TODO check
     List<URL> serviceUrls = this.getServiceUrls(bundle);
     if (!serviceUrls.isEmpty()) {
-      ClassLoader classLoader = createClassLoader(bundle);
-      ArrayList<ServiceCaller> callers = new ArrayList<ServiceCaller>();
-      ArrayList<ServiceRegistration<?>> registrations = new ArrayList<ServiceRegistration<?>>();
+      List<ParseResult> results = new ArrayList<ParseResult>(serviceUrls.size());
       for (URL serviceXml : serviceUrls) {
         ParseResult result = this.parseServiceXml(serviceXml);
         if (!result.isEmpty()) {
-          for (ServiceInfo info : result.services) {
-            Class<?> interfaceClazz;
-            try {
-              interfaceClazz = classLoader.loadClass(info.interfaceName);
-            } catch (ClassNotFoundException e) {
-              this.logger.warning("failed to load interface class: " + info.interfaceName + " remote service will not be available", e);
-              continue;
-            }
-            Object jBossProxy = this.lookUpJBossProxy(interfaceClazz, info.jndiName);
-            ServiceCaller serviceCaller = new ServiceCaller(jBossProxy, classLoader, this.logger);
-            Object service = Proxy.newProxyInstance(classLoader, new Class[]{interfaceClazz}, serviceCaller);
-            callers.add(serviceCaller);
-            // TODO properties
-            Dictionary<String, Object> properties = new Hashtable<String, Object>();
-            properties.put("service.imported", true);
-            ServiceRegistration<?> serviceRegistration = this.bundleContext.registerService(info.interfaceName, service, properties);
-            registrations.add(serviceRegistration);
-          }
+          results.add(result);
         }
       }
+      if (results.isEmpty()) {
+        return;
+      }
 
-      if (!callers.isEmpty() && !registrations.isEmpty()) {
-        callers.trimToSize();
-        registrations.trimToSize();
-        BundleProxyContext bundleProxyContext = new BundleProxyContext(callers, registrations);
-        // prevent double registration is case of concurrent call by listener and initial list
-        BundleProxyContext previous = this.contexts.putIfAbsent(bundle, bundleProxyContext);
-        if (previous != null) {
-          // undo registration
-          bundleProxyContext.unregisterServices(this.bundleContext);
+      // ---
+
+      ParseResult result = ParseResult.flatten(results);
+
+      ClassLoader classLoader = createClassLoader(bundle);
+      List<ServiceCaller> callers = new ArrayList<ServiceCaller>(result.size());
+      List<ServiceRegistration<?>> registrations = new ArrayList<ServiceRegistration<?>>(result.size());
+      Context namingContext = this.createNamingContext();
+
+      for (ServiceInfo info : result.services) {
+        Class<?> interfaceClazz;
+        try {
+          interfaceClazz = classLoader.loadClass(info.interfaceName);
+        } catch (ClassNotFoundException e) {
+          this.logger.warning("failed to load interface class: " + info.interfaceName + " remote service will not be available", e);
+          continue;
         }
+        Object jBossProxy = this.lookUpJBossProxy(interfaceClazz, info.jndiName, namingContext);
+        ServiceCaller serviceCaller = new ServiceCaller(jBossProxy, classLoader, this.logger);
+        Object service = Proxy.newProxyInstance(classLoader, new Class[]{interfaceClazz}, serviceCaller);
+        callers.add(serviceCaller);
+        // TODO properties
+        Dictionary<String, Object> properties = new Hashtable<String, Object>();
+        properties.put("service.imported", true);
+        ServiceRegistration<?> serviceRegistration = this.bundleContext.registerService(info.interfaceName, service, properties);
+        registrations.add(serviceRegistration);
+      }
+
+      BundleProxyContext bundleProxyContext = new BundleProxyContext(namingContext, callers, registrations);
+      // prevent double registration is case of concurrent call by listener and initial list
+      BundleProxyContext previous = this.contexts.putIfAbsent(bundle, bundleProxyContext);
+      if (previous != null) {
+        // undo registration
+        bundleProxyContext.unregisterServices(this.bundleContext);
       }
     }
   }
@@ -179,7 +187,7 @@ final class ProxyService implements BundleListener {
     ClassLoader classLoader = new BundlesProxyClassLoader(bundles);
     return classLoader;
   }
-  
+
   private Object lookUpJBossProxy(Class<?> interfaceClazz, String jndiName, Context namingContext) {
     Object proxy = namingContext.lookup(jndiName);
     return interfaceClazz.cast(proxy);
@@ -202,8 +210,8 @@ final class ProxyService implements BundleListener {
     }
 
   }
-  
-  private Context createContext() {
+
+  private Context createNamingContext() {
     Properties jndiProps = new Properties();
     jndiProps.put(Context.INITIAL_CONTEXT_FACTORY, "org.jboss.naming.remote.client.InitialContextFactory");
     // TODO configure
@@ -257,6 +265,25 @@ final class ProxyService implements BundleListener {
       return this.services.size();
     }
 
+    static ParseResult flatten(List<ParseResult> results) {
+      if (results.isEmpty()) {
+        throw new IllegalArgumentException("collection must not be empty");
+      }
+      if (results.size() == 1) {
+        return results.get(0);
+      }
+
+      int size = 0;
+      for (ParseResult result : results) {
+        size += result.size();
+      }
+      List<ServiceInfo> services = new ArrayList<ServiceInfo>(size);
+      for (ParseResult result : results) {
+        services.addAll(result.services);
+      }
+      return new ParseResult(services);
+    }
+
   }
 
   static final class ServiceInfo {
@@ -272,7 +299,7 @@ final class ProxyService implements BundleListener {
   }
 
   static final class BundleProxyContext {
-    
+
     private final Context namingContext;
 
     private final Collection<ServiceCaller> callers;
@@ -284,13 +311,13 @@ final class ProxyService implements BundleListener {
       this.callers = callers;
       this.registrations = registrations;
     }
-    
+
     void release(BundleContext bundleContext) throws NamingException {
       this.unregisterServices(bundleContext);
       this.invalidateCallers();
       this.closeNamingConext();
     }
-    
+
     private void closeNamingConext() throws NamingException {
       this.namingContext.close();
     }

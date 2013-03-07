@@ -7,6 +7,20 @@ import org.osgi.util.tracker.ServiceTracker;
 import static org.osgi.service.log.LogService.LOG_ERROR;
 import static org.osgi.service.log.LogService.LOG_WARNING;
 
+/**
+ * A wrapper around OSGi log service that does nothing if none is present.
+ * 
+ * <p>
+ * The implementation tries to delay class loading as long as possible so that
+ * we shouldn't run into a {@link NoClassDefFoundError} when OSGi log service
+ * is not present.
+ * </p>
+ * 
+ * <p>
+ * Log levels should be compile time constants and therefore be inlined so that
+ * they don't trigger class loading.
+ * </p>
+ */
 final class Logger {
   
   private ServiceTracker<?, ?> serviceTracker;
@@ -57,7 +71,6 @@ final class Logger {
     // delay class loading for as long as possible
     LogService logService = (LogService) service;
     logService.log(level, message);
-    
   }
   
 

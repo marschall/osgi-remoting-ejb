@@ -215,8 +215,8 @@
               org.osgi.framework;version="[1.0.0,2.0.0)",
               org.osgi.util.tracker,
               org.osgi.service.log;resolution:=optional,
-              javax.annotation;resolution:=optional,
-              javax.xml.stream
+              javax.xml.stream,
+              javax.naming
             </Import-Package>
             <Bundle-SymbolicName>${project.groupId}.${project.artifactId};singleton:=true</Bundle-SymbolicName>
             <Bundle-Activator>com.github.marschall.jboss.osgi.remoting.Activator</Bundle-Activator>
