@@ -23,6 +23,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
+import javax.naming.NamingException;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamReader;
 
@@ -179,8 +180,8 @@ final class ProxyService implements BundleListener {
     return classLoader;
   }
   
-  private Object lookUpJBossProxy(Class<?> interfaceClazz, String jndiName) {
-    Object proxy = null;
+  private Object lookUpJBossProxy(Class<?> interfaceClazz, String jndiName, Context namingContext) {
+    Object proxy = namingContext.lookup(jndiName);
     return interfaceClazz.cast(proxy);
   }
 
@@ -202,20 +203,19 @@ final class ProxyService implements BundleListener {
 
   }
   
-  private InitialContext createInitialContext() {
+  private Context createContext() {
     Properties jndiProps = new Properties();
     jndiProps.put(Context.INITIAL_CONTEXT_FACTORY, "org.jboss.naming.remote.client.InitialContextFactory");
     // TODO configure
     jndiProps.put(Context.PROVIDER_URL,"remote://localhost:4447");
-    // create a context passing these properties
-    Context ctx = new InitialContext(jndiProps);
+    // create a namingContext passing these properties
+    return new InitialContext(jndiProps);
   }
 
   void removePotentialBundle(Bundle bundle) {
     BundleProxyContext context = this.contexts.remove(bundle);
     if (context != null) {
-      context.invalidateCallers();
-      context.unregisterServices(bundleContext);
+      context.release(bundleContext);
     }
   }
 
@@ -237,8 +237,7 @@ final class ProxyService implements BundleListener {
 
   void stop() {
     for (BundleProxyContext context : this.contexts.values()) {
-      context.invalidateCallers();
-      context.unregisterServices(bundleContext);
+      context.release(bundleContext);
     }
   }
 
@@ -273,23 +272,36 @@ final class ProxyService implements BundleListener {
   }
 
   static final class BundleProxyContext {
+    
+    private final Context namingContext;
 
     private final Collection<ServiceCaller> callers;
 
     private final Collection<ServiceRegistration<?>> registrations;
 
-    BundleProxyContext(Collection<ServiceCaller> callers, Collection<ServiceRegistration<?>> registrations) {
+    BundleProxyContext(Context namingContext, Collection<ServiceCaller> callers, Collection<ServiceRegistration<?>> registrations) {
+      this.namingContext = namingContext;
       this.callers = callers;
       this.registrations = registrations;
     }
+    
+    void release(BundleContext bundleContext) throws NamingException {
+      this.unregisterServices(bundleContext);
+      this.invalidateCallers();
+      this.closeNamingConext();
+    }
+    
+    private void closeNamingConext() throws NamingException {
+      this.namingContext.close();
+    }
 
-    void unregisterServices(BundleContext bundleContext) {
+    private void unregisterServices(BundleContext bundleContext) {
       for (ServiceRegistration<?> registration : this.registrations) {
         bundleContext.ungetService(registration.getReference());
       }
     }
 
-    void invalidateCallers() {
+    private void invalidateCallers() {
       for (ServiceCaller caller : callers) {
         caller.invalidate();
       }
