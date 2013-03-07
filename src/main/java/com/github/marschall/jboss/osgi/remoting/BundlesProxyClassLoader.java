@@ -18,10 +18,10 @@ final class BundlesProxyClassLoader extends ClassLoader {
     // try to call registerAsParallelCapable
     try {
       Method registerAsParallelCapable = ClassLoader.class.getDeclaredMethod("registerAsParallelCapable");
+      registerAsParallelCapable.setAccessible(true);
       registerAsParallelCapable.invoke(null);
     } catch (SecurityException e) {
       // ignore, no permissions
-      e.printStackTrace();
     } catch (IllegalAccessException e) {
       // shouldn't happen
     } catch (InvocationTargetException e) {

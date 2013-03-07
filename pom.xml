@@ -107,11 +107,6 @@
     </dependency>
 
     <!-- client communications with the server use XNIO -->
-    <dependency>
-      <groupId>org.jboss.xnio</groupId>
-      <artifactId>xnio-api</artifactId>
-      <scope>runtime</scope>
-    </dependency>
 
     <dependency>
       <groupId>org.jboss.xnio</groupId>
