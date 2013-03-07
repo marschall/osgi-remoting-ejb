@@ -163,34 +163,42 @@ final class ProxyService implements BundleListener {
       return;
     }
 
-    for (ServiceInfo info : result.services) {
-      Class<?> interfaceClazz;
-      Object jBossProxy;
-      try {
-        interfaceClazz = classLoader.loadClass(info.interfaceName);
-        jBossProxy = this.lookUpJBossProxy(interfaceClazz, info.jndiName, namingContext);
-      } catch (ClassNotFoundException e) {
-        this.logger.warning("failed to load interface class: " + info.interfaceName
-            + ", remote service will not be available", e);
-        continue;
-      } catch (NamingException e) {
-        this.logger.warning("failed to look up interface class: " + info.interfaceName
-            + " with JNDI name: " + info.jndiName
-            + ", remote service will not be available", e);
-        continue;
-      } catch (ClassCastException e) {
-        this.logger.warning("failed to load interface class: " + info.interfaceName
-            + ", remote service will not be available", e);
-        continue;
+    Thread currentThread = Thread.currentThread();
+    ClassLoader oldContextClassLoader = currentThread.getContextClassLoader();
+    // switch TCCL only once for all the look ups
+    currentThread.setContextClassLoader(classLoader);
+    try {
+      for (ServiceInfo info : result.services) {
+        Class<?> interfaceClazz;
+        Object jBossProxy;
+        try {
+          interfaceClazz = classLoader.loadClass(info.interfaceName);
+          jBossProxy = this.lookUpJBossProxy(interfaceClazz, info.jndiName, namingContext);
+        } catch (ClassNotFoundException e) {
+          this.logger.warning("failed to load interface class: " + info.interfaceName
+              + ", remote service will not be available", e);
+          continue;
+        } catch (NamingException e) {
+          this.logger.warning("failed to look up interface class: " + info.interfaceName
+              + " with JNDI name: " + info.jndiName
+              + ", remote service will not be available", e);
+          continue;
+        } catch (ClassCastException e) {
+          this.logger.warning("failed to load interface class: " + info.interfaceName
+              + ", remote service will not be available", e);
+          continue;
+        }
+        ServiceCaller serviceCaller = new ServiceCaller(jBossProxy, classLoader, this.logger);
+        Object service = Proxy.newProxyInstance(classLoader, new Class[]{interfaceClazz}, serviceCaller);
+        callers.add(serviceCaller);
+        // TODO properties
+        Dictionary<String, Object> properties = new Hashtable<String, Object>();
+        properties.put("service.imported", true);
+        ServiceRegistration<?> serviceRegistration = this.bundleContext.registerService(info.interfaceName, service, properties);
+        registrations.add(serviceRegistration);
       }
-      ServiceCaller serviceCaller = new ServiceCaller(jBossProxy, classLoader, this.logger);
-      Object service = Proxy.newProxyInstance(classLoader, new Class[]{interfaceClazz}, serviceCaller);
-      callers.add(serviceCaller);
-      // TODO properties
-      Dictionary<String, Object> properties = new Hashtable<String, Object>();
-      properties.put("service.imported", true);
-      ServiceRegistration<?> serviceRegistration = this.bundleContext.registerService(info.interfaceName, service, properties);
-      registrations.add(serviceRegistration);
+    } finally {
+      currentThread.setContextClassLoader(oldContextClassLoader);
     }
 
     BundleProxyContext bundleProxyContext = new BundleProxyContext(namingContext, callers, registrations);
@@ -209,7 +217,7 @@ final class ProxyService implements BundleListener {
   }
 
   private Object lookUpJBossProxy(Class<?> interfaceClazz, String jndiName, Context namingContext)
-       throws NamingException, ClassCastException {
+      throws NamingException, ClassCastException {
     Object proxy = namingContext.lookup(jndiName);
     return interfaceClazz.cast(proxy);
   }
