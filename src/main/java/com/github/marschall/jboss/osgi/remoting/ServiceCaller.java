@@ -27,6 +27,7 @@ class ServiceCaller implements InvocationHandler {
 
   @Override
   public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+    // TODO check we're not in the UI thread
     Thread currentThread = Thread.currentThread();
     ClassLoader oldContextClassLoader = currentThread.getContextClassLoader();
     currentThread.setContextClassLoader(this.classLoader);

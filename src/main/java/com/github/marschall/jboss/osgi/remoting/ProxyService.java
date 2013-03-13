@@ -11,13 +11,18 @@ import java.io.InputStream;
 import java.lang.reflect.Proxy;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Dictionary;
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -25,6 +30,7 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
 import org.osgi.framework.Bundle;
@@ -64,7 +70,7 @@ final class ProxyService implements BundleListener {
 
   private final Logger logger;
 
-  private final List<Bundle> parentBundles;
+  private final ClassLoader parent;
 
 
   ProxyService(BundleContext bundleContext, Logger logger) {
@@ -72,6 +78,21 @@ final class ProxyService implements BundleListener {
     this.logger = logger;
     this.contexts = new ConcurrentHashMap<Bundle, BundleProxyContext>();
     this.inputFactory = this.createInputFactory();
+    this.parent = new BundlesProxyClassLoader(this.lookUpParentBundles(bundleContext));
+  }
+  
+  private Collection<Bundle> lookUpParentBundles(BundleContext bundleContext) {
+    Set<String> symbolicNames = new HashSet<String>(Arrays.asList(PARENT_BUNDLE_IDS));
+    Map<String, Bundle> found = new HashMap<String, Bundle>(symbolicNames.size());
+    for (Bundle bundle : bundleContext.getBundles()) {
+      String symbolicName = bundle.getSymbolicName();
+      if (symbolicNames.contains(symbolicName)) {
+        // TODO check version
+        found.put(symbolicName, bundle);
+      }
+    }
+    // TODO sort?
+    return found.values();
   }
 
   private XMLInputFactory createInputFactory() {
@@ -101,6 +122,7 @@ final class ProxyService implements BundleListener {
     if (remoteServiceHeader != null) {
       return remoteServiceHeader;
     } else {
+      // TODO check
       return "OSGI-INF/remote-service";
     }
   }
@@ -130,12 +152,20 @@ final class ProxyService implements BundleListener {
   }
 
   void addPotentialBundle(Bundle bundle) {
-    // TODO check
     List<URL> serviceUrls = this.getServiceUrls(bundle);
     if (!serviceUrls.isEmpty()) {
       List<ParseResult> results = new ArrayList<ParseResult>(serviceUrls.size());
       for (URL serviceXml : serviceUrls) {
-        ParseResult result = this.parseServiceXml(serviceXml);
+        ParseResult result;
+        try {
+          result = this.parseServiceXml(serviceXml);
+        } catch (IOException e) {
+          this.logger.warning("could not parse XML: " + serviceXml + " in bundle:" + bundle + ", ignoring",  e);
+          continue;
+        } catch (XMLStreamException e) {
+          this.logger.warning("could not parse XML: " + serviceXml + " in bundle:" + bundle + ", ignoring",  e);
+          continue;
+        }
         if (!result.isEmpty()) {
           results.add(result);
         }
@@ -202,7 +232,7 @@ final class ProxyService implements BundleListener {
     }
 
     BundleProxyContext bundleProxyContext = new BundleProxyContext(namingContext, callers, registrations);
-    // prevent double registration is case of concurrent call by listener and initial list
+    // detect double registration is case of concurrent call by #bundleChanged and #initialBundles
     BundleProxyContext previous = this.contexts.putIfAbsent(bundle, bundleProxyContext);
     if (previous != null) {
       // undo registration
@@ -211,33 +241,34 @@ final class ProxyService implements BundleListener {
   }
 
   ClassLoader createClassLoader(Bundle bundle) {
-    SuffixList<Bundle> bundles = new SuffixList<Bundle>(this.parentBundles, bundle);
-    ClassLoader classLoader = new BundlesProxyClassLoader(bundles);
-    return classLoader;
+    return new BundleProxyClassLoader(bundle, this.parent);
   }
 
   private Object lookUpJBossProxy(Class<?> interfaceClazz, String jndiName, Context namingContext)
       throws NamingException, ClassCastException {
+    // TODO needs to go to custom thread for 
     Object proxy = namingContext.lookup(jndiName);
     return interfaceClazz.cast(proxy);
   }
 
-  private ParseResult parseServiceXml(URL serviceXml) {
+  private ParseResult parseServiceXml(URL serviceXml) throws IOException, XMLStreamException {
     InputStream stream = serviceXml.openStream();
     try {
       XMLStreamReader reader = this.inputFactory.createXMLStreamReader(stream);
       try {
-
+        return this.parseSafe(reader);
       } finally {
         // TODO CR
         reader.close();
       }
-    } catch (IOException e) {
-
     } finally {
       stream.close();
     }
 
+  }
+  
+  private ParseResult parseSafe(XMLStreamReader reader) {
+    
   }
 
   private Context createNamingContext() throws NamingException {

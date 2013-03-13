@@ -4,9 +4,9 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Iterator;
-import java.util.List;
 import java.util.NoSuchElementException;
 
 import org.osgi.framework.Bundle;
@@ -32,9 +32,9 @@ final class BundlesProxyClassLoader extends ClassLoader {
   }
   
   
-  private final List<Bundle> bundles;
+  private final Collection<Bundle> bundles;
 
-  BundlesProxyClassLoader(List<Bundle> bundles) {
+  BundlesProxyClassLoader(Collection<Bundle> bundles) {
     this.bundles = bundles;
   }
   
