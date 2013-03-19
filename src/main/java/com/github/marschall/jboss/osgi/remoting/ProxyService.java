@@ -222,6 +222,7 @@ final class ProxyService implements BundleListener {
         Object service = Proxy.newProxyInstance(classLoader, new Class[]{interfaceClazz}, serviceCaller);
         callers.add(serviceCaller);
         // TODO properties
+        // TODO connection name
         Dictionary<String, Object> properties = new Hashtable<String, Object>();
         properties.put("service.imported", true);
         ServiceRegistration<?> serviceRegistration = this.bundleContext.registerService(info.interfaceName, service, properties);
@@ -246,7 +247,7 @@ final class ProxyService implements BundleListener {
 
   private Object lookUpJBossProxy(Class<?> interfaceClazz, String jndiName, Context namingContext)
       throws NamingException, ClassCastException {
-    // TODO needs to go to custom thread for 
+    // TODO needs to go to custom thread for stateful
     Object proxy = namingContext.lookup(jndiName);
     return interfaceClazz.cast(proxy);
   }
