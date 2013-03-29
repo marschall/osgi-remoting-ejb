@@ -8,7 +8,12 @@
     <version>0.0.1-SNAPSHOT</version>
   </parent>
 
-  <artifactId>jboss-osgi-remoting-processor</artifactId>
-  <packaging>jar</packaging>
+  <artifactId>jboss-osgi-remoting-sample</artifactId>
+  <packaging>pom</packaging>
+
+  <modules>
+    <module>sample-ejb</module>
+    <module>sample-ear</module>
+  </modules>
 
 </project>
