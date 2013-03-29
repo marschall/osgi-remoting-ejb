@@ -14,7 +14,10 @@ import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic.Kind;
 
-@SupportedOptions({""})
+@SupportedOptions({
+  "javax.ejb.module.name",
+  "javax.ejb.application.name"
+})
 // TODO
 //  application name
 //  module name
@@ -27,7 +30,12 @@ import javax.tools.Diagnostic.Kind;
 })
 public class ServiceXmlGenerator extends AbstractProcessor {
   
+  static final String MODULE_NAME_OPTION = "javax.ejb.module.name";
+  static final String APPLICATION_NAME_OPTION = "javax.ejb.application.name";
+  
   private EjbCollector collector;
+  private String applicationName;
+  private String moduleName;
 
   public ServiceXmlGenerator() {
     super();
@@ -38,6 +46,8 @@ public class ServiceXmlGenerator extends AbstractProcessor {
     super.init(processingEnv);
 
     Map<String, String> options = processingEnv.getOptions();
+    this.applicationName = options.get(APPLICATION_NAME_OPTION);
+    this.moduleName = options.get(MODULE_NAME_OPTION);
     this.collector = new EjbCollector(processingEnv);
   }
 
@@ -46,7 +56,8 @@ public class ServiceXmlGenerator extends AbstractProcessor {
     if (roundEnv.errorRaised()) {
       return false;
     } else if (roundEnv.processingOver()) {
-      this.processingEnv.getMessager().printMessage(Kind.NOTE, "done");
+      this.processingEnv.getMessager().printMessage(Kind.NOTE, "module name: " + moduleName);
+      this.processingEnv.getMessager().printMessage(Kind.NOTE, "application name: " + applicationName);
       
       for (EjbInfo ejb : this.collector.beans) {
         this.processingEnv.getMessager().printMessage(Kind.NOTE, ejb.nonQualifiedClassName

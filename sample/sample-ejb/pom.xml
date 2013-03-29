@@ -35,24 +35,12 @@
       </plugin>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
-<!--
         <configuration>
-          <annotationProcessors>
-            <annotationProcessor>
-              com.github.marschall.jboss.osgi.remoting.ServiceXmlGenerator
-            </annotationProcessor>
-          </annotationProcessors>
+          <compilerArguments>
+            <Ajavax.ejb.module.name>${project.artifactId}</Ajavax.ejb.module.name>
+            <Ajavax.ejb.application.name>jboss-osgi-remoting-sample-ear</Ajavax.ejb.application.name>
+          </compilerArguments>
         </configuration>
--->
-<!--
-        <dependencies>
-          <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>jboss-osgi-remoting-processor</artifactId>
-            <version>${project.version}</version>
-          </dependency>
-        </dependencies>
--->
       </plugin>
     </plugins>
   </build>
