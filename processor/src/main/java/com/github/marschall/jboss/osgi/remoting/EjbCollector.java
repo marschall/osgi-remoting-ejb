@@ -104,7 +104,7 @@ final class EjbCollector {
   }
   
   private List<String> getRemoteInterfaceNamesFromImplementation(Element ejb) {
-    List<? extends TypeMirror> implementedInterface = ejb.accept(ImplementedInterfacesVisitor.INSTANCE, null);
+    List<? extends TypeMirror> implementedInterface = ejb.accept(ImplementedInterfacesVisitor.INSTANCE, this.types);
     List<TypeMirror> remoteInterfaces = this.filterNonRemoteInterfaces(implementedInterface);
     return getInterfaceNames(remoteInterfaces);
   }
@@ -172,26 +172,26 @@ final class EjbCollector {
     }
 
     @Override
-    protected List<String> defaultAction(Object o, List<String> accumulator) {
+    protected List<String> defaultAction(Object object, List<String> accumulator) {
       return accumulator;
     }
 
     @Override
-    public List<String> visitArray(List<? extends AnnotationValue> vals, List<String> p) {
+    public List<String> visitArray(List<? extends AnnotationValue> vals, List<String> accumulator) {
       for (AnnotationValue annoationValue : vals) {
-        annoationValue.accept(this, p);
+        annoationValue.accept(this, accumulator);
       }
-      return super.visitArray(vals, p);
+      return super.visitArray(vals, accumulator);
     }
 
     @Override
-    public List<String> visitType(TypeMirror t, List<String> p) {
-      Element element = this.types.asElement(t);
+    public List<String> visitType(TypeMirror type, List<String> accumulator) {
+      Element element = this.types.asElement(type);
       String typeName = element.accept(TypeNameVisitor.INSTANCE, null);
       if (typeName != null) {
-        p.add(typeName);
+        accumulator.add(typeName);
       }
-      return p;
+      return accumulator;
     }
 
   }
@@ -201,8 +201,8 @@ final class EjbCollector {
     static final ElementVisitor<String, Void> INSTANCE = new TypeNameVisitor();
 
     @Override
-    public String visitType(TypeElement e, Void p) {
-      return e.getQualifiedName().toString();
+    public String visitType(TypeElement type, Void p) {
+      return type.getQualifiedName().toString();
     }
 
   }
@@ -212,27 +212,28 @@ final class EjbCollector {
     static final ElementVisitor<Boolean, EjbCollector> INSTANCE = new IsAnnotatedWithRemote();
 
     @Override
-    public Boolean visitType(TypeElement e, EjbCollector collector) {
-      return collector.getRemoteAnnotation(e) != null;
+    public Boolean visitType(TypeElement type, EjbCollector collector) {
+      return collector.getRemoteAnnotation(type) != null;
     }
   }
   
-  static final class ImplementedInterfacesVisitor extends SimpleElementVisitor6<List<? extends TypeMirror>, Void> {
+  static final class ImplementedInterfacesVisitor extends SimpleElementVisitor6<List<? extends TypeMirror>, Types> {
     
-    static final ElementVisitor<List<? extends TypeMirror>, Void> INSTANCE = new ImplementedInterfacesVisitor();
+    static final ElementVisitor<List<? extends TypeMirror>, Types> INSTANCE = new ImplementedInterfacesVisitor();
     
     @Override
-    public List<? extends TypeMirror> visitType(TypeElement e, Void p) {
-      List<? extends TypeMirror> directInterfaces = e.getInterfaces();
-      TypeMirror superclass = e.getSuperclass();
-      if (superclass.equals(TypeKind.NONE)) {
+    public List<? extends TypeMirror> visitType(TypeElement type, Types types) {
+      List<? extends TypeMirror> directInterfaces = type.getInterfaces();
+      TypeMirror superclass = type.getSuperclass();
+      if (superclass.getKind() == TypeKind.NONE) {
         return directInterfaces;
       } else {
-        List<TypeMirror> allInterface = new ArrayList<TypeMirror>(directInterfaces.size());
-        List<? extends TypeMirror> parentInterfaces = e.accept(this, null);
-        allInterface.addAll(directInterfaces);
-        allInterface.addAll(parentInterfaces);
-        return allInterface;
+        List<? extends TypeMirror> parentInterfaces = types.asElement(superclass).accept(this, types);
+        // TODO optimize
+        List<TypeMirror> allInterfaces = new ArrayList<TypeMirror>(directInterfaces.size() + parentInterfaces.size());
+        allInterfaces.addAll(directInterfaces);
+        allInterfaces.addAll(parentInterfaces);
+        return allInterfaces;
       }
     }
     
