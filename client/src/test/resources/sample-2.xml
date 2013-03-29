@@ -1,11 +1,10 @@
-<endpoint-descriptions xmlns="http://www.osgi.org/xmlns/rsa/v1.0.0">
-  <endpoint-description>
-    <property name="objectClass">
-      <array>
-        <value>org.apache.cxf.dosgi.samples.springdm.DinnerService</value>
-      </array>
-    </property>
-    <property name="endpoint.id">http://localhost:9000/org/apache/cxf/dosgi/samples/springdm/DinnerService</property>
-    <property name="service.imported.configs">org.apache.cxf.ws</property>
-  </endpoint-description>
-</endpoint-descriptions>
+<service-descriptions xmlns="http://www.osgi.org/xmlns/sd/v1.0.0">
+ <service-description>
+  <provide interface="org.coderthoughts.auction.AuctionService"/>
+  <property name="osgi.remote.interfaces">*</property>
+  <property name="osgi.remote.configuration.type">pojo</property>
+  <property name="osgi.remote.configuration.pojo.address">
+   http://localhost:9000/org/coderthoughts/auction/AuctionService
+  </property>
+ </service-description>
+</service-descriptions>

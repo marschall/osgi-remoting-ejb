@@ -9,7 +9,8 @@ public class StatefulBean implements StatefulNonRemote, StatefulRemote1, Statefu
   
   @Override
   public String statefulNonRemote() {
-    return "StatefulNonRemote";
+//    return "StatefulNonRemote";
+    return com.github.marschall.jboss.osgi.remoting.ServiceXmlGenerator.class.getName();
   }
   
   @Override
