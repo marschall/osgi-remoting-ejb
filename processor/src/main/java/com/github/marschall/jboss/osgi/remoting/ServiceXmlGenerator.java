@@ -12,6 +12,7 @@ import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.annotation.processing.SupportedOptions;
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.element.TypeElement;
+import javax.tools.Diagnostic.Kind;
 
 @SupportedOptions({""})
 // TODO
@@ -26,6 +27,8 @@ import javax.lang.model.element.TypeElement;
 })
 public class ServiceXmlGenerator extends AbstractProcessor {
   
+  private EjbCollector collector;
+
   public ServiceXmlGenerator() {
     super();
   }
@@ -35,6 +38,7 @@ public class ServiceXmlGenerator extends AbstractProcessor {
     super.init(processingEnv);
 
     Map<String, String> options = processingEnv.getOptions();
+    this.collector = new EjbCollector(processingEnv);
   }
 
   @Override
@@ -42,10 +46,11 @@ public class ServiceXmlGenerator extends AbstractProcessor {
     if (roundEnv.errorRaised()) {
       return false;
     } else if (roundEnv.processingOver()) {
-      // write xml
+      // TODO write xml
+      this.processingEnv.getMessager().printMessage(Kind.NOTE, "done");
       return false;
     } else {
-      // collect data
+      this.collector.processRound(roundEnv);
       return true;
     }
   }
