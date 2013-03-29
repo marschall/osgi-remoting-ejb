@@ -46,8 +46,14 @@ public class ServiceXmlGenerator extends AbstractProcessor {
     if (roundEnv.errorRaised()) {
       return false;
     } else if (roundEnv.processingOver()) {
-      // TODO write xml
       this.processingEnv.getMessager().printMessage(Kind.NOTE, "done");
+      
+      for (EjbInfo ejb : this.collector.beans) {
+        this.processingEnv.getMessager().printMessage(Kind.NOTE, ejb.nonQualifiedClassName
+            + (ejb.stateful ? "(stateful)" : "")
+            + " implements " + ejb.remoteInterfaces,
+            ejb.originatingElement);
+      }
       return false;
     } else {
       this.collector.processRound(roundEnv);

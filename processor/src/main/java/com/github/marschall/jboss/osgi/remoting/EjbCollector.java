@@ -24,7 +24,7 @@ import javax.tools.Diagnostic.Kind;
 
 final class EjbCollector {
 
-  private final List<EjbInfo> beans;
+  final List<EjbInfo> beans;
 
   private final ProcessingEnvironment processingEnv;
 
@@ -172,8 +172,8 @@ final class EjbCollector {
     }
 
     @Override
-    protected List<String> defaultAction(Object o, List<String> p) {
-      return p;
+    protected List<String> defaultAction(Object o, List<String> accumulator) {
+      return accumulator;
     }
 
     @Override

@@ -9,6 +9,16 @@
   </parent>
 
   <artifactId>jboss-osgi-remoting-processor</artifactId>
-  <packaging>jar</packaging>
+
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <proc>none</proc>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 
 </project>
