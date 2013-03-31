@@ -27,7 +27,8 @@ import javax.xml.stream.XMLStreamWriter;
 
 @SupportedOptions({
   "javax.ejb.module.name",
-  "javax.ejb.application.name"
+  "javax.ejb.application.name",
+  "org.jboss.distinct.name",
 })
 // TODO
 //  application name
@@ -44,10 +45,13 @@ public class ServiceXmlGenerator extends AbstractProcessor {
   private static final String FILE_NAME = "ejb-client.xml";
   static final String MODULE_NAME_OPTION = "javax.ejb.module.name";
   static final String APPLICATION_NAME_OPTION = "javax.ejb.application.name";
+  static final String DISTINCT_NAME_OPTION = "org.jboss.distinct.name";
 
   private EjbCollector collector;
   private String applicationName;
   private String moduleName;
+  private boolean jbossSyntax;
+  private String distinctName;
 
   public ServiceXmlGenerator() {
     super();
@@ -61,6 +65,11 @@ public class ServiceXmlGenerator extends AbstractProcessor {
     this.applicationName = options.get(APPLICATION_NAME_OPTION);
     this.moduleName = options.get(MODULE_NAME_OPTION);
     this.collector = new EjbCollector(processingEnv);
+    
+    this.jbossSyntax = options.containsKey(DISTINCT_NAME_OPTION);
+    if (this.jbossSyntax) {
+      this.distinctName = options.get(DISTINCT_NAME_OPTION);
+    }
   }
 
   @Override
@@ -161,25 +170,22 @@ public class ServiceXmlGenerator extends AbstractProcessor {
     // <property name="osgi.remote.configuration.pojo.jndiName">foo/bar</property>
     String jndiName = jndiName(bean, remoteInterface);
     writeProperty("osgi.remote.configuration.pojo.jndiName", jndiName, writer);
-    // <property name="osgi.remote.configuration.pojo.jndiName">foo/bar</property>
-    // TODO make configurable
-    String jbossEjbName = jbossEjbName(bean, remoteInterface);
-    writeProperty("osgi.remote.configuration.pojo.jbossEjbName", jbossEjbName, writer);
     
     writer.writeEndElement(); //service-description
   }
 
   private String jndiName(EjbInfo bean, String remoteInterface) {
     // TODO optimize
-    return this.applicationName + '/' + this.moduleName +'/' + bean.nonQualifiedClassName + '!' + remoteInterface;
+    if (this.jbossSyntax) {
+      // TODO distinct name
+      return "ejb://" + this.applicationName + '/' + this.moduleName +'/' + bean.nonQualifiedClassName + '!' + remoteInterface
+          + (bean.stateful ? "?stateful" : "");
+      
+    } else {
+      return this.applicationName + '/' + this.moduleName +'/' + bean.nonQualifiedClassName + '!' + remoteInterface;
+    }
   }
   
-  private String jbossEjbName(EjbInfo bean, String remoteInterface) {
-    // TODO distinct name
-    return this.applicationName + '/' + this.moduleName +'/' + bean.nonQualifiedClassName + '!' + remoteInterface
-        + (bean.stateful ? "?stateful" : "");
-  }
-
   void writeProperty(String name, String value, XMLStreamWriter writer) throws XMLStreamException {
     writer.writeStartElement("property");
     writer.writeAttribute("name", name);
