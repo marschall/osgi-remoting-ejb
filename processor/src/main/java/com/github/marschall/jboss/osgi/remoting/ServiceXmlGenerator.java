@@ -19,7 +19,6 @@ import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.annotation.processing.SupportedOptions;
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.element.TypeElement;
-import javax.tools.Diagnostic.Kind;
 import javax.tools.FileObject;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
@@ -30,10 +29,6 @@ import javax.xml.stream.XMLStreamWriter;
   "javax.ejb.application.name",
   "org.jboss.distinct.name",
 })
-// TODO
-//  application name
-//  module name
-//  implenetation prefix (eg. jboss)
 @SupportedSourceVersion(RELEASE_6)
 @SupportedAnnotationTypes({
   "javax.ejb.Stateful",
@@ -69,6 +64,9 @@ public class ServiceXmlGenerator extends AbstractProcessor {
     this.jbossSyntax = options.containsKey(DISTINCT_NAME_OPTION);
     if (this.jbossSyntax) {
       this.distinctName = options.get(DISTINCT_NAME_OPTION);
+      if (this.distinctName == null) {
+        this.distinctName = "";
+      }
     }
   }
 
@@ -77,9 +75,6 @@ public class ServiceXmlGenerator extends AbstractProcessor {
     if (roundEnv.errorRaised()) {
       return false;
     } else if (roundEnv.processingOver()) {
-      this.processingEnv.getMessager().printMessage(Kind.NOTE, "module name: " + moduleName);
-      this.processingEnv.getMessager().printMessage(Kind.NOTE, "application name: " + applicationName);
-
       this.writeServiceXml();
       return false;
     } else {
@@ -177,8 +172,7 @@ public class ServiceXmlGenerator extends AbstractProcessor {
   private String jndiName(EjbInfo bean, String remoteInterface) {
     // TODO optimize
     if (this.jbossSyntax) {
-      // TODO distinct name
-      return "ejb://" + this.applicationName + '/' + this.moduleName +'/' + bean.nonQualifiedClassName + '!' + remoteInterface
+      return "ejb:" + this.applicationName + '/' + this.moduleName +'/' + this.distinctName + '/' + bean.nonQualifiedClassName + '!' + remoteInterface
           + (bean.stateful ? "?stateful" : "");
       
     } else {
