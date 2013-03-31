@@ -43,7 +43,7 @@ final class EjbCollector {
 
   EjbCollector(ProcessingEnvironment processingEnv) {
     this.processingEnv = processingEnv;
-    this.beans = new ArrayList<EjbInfo>();
+    this.beans = new ArrayList<EjbInfo>(3);
     
     this.elements = this.processingEnv.getElementUtils();
     this.types = this.processingEnv.getTypeUtils();
@@ -52,6 +52,19 @@ final class EjbCollector {
     this.stateful = this.elements.getTypeElement("javax.ejb.Stateful");
     this.singleton = this.elements.getTypeElement("javax.ejb.Singleton");
     this.remote = this.elements.getTypeElement("javax.ejb.Remote");
+  }
+  
+  boolean isEmpty() {
+    return this.beans.isEmpty();
+  }
+  
+
+  public Element[] getElements() {
+    Element[] elements = new Element[this.beans.size()];
+    for (int i = 0; i < this.beans.size(); ++i) {
+      elements[i] = this.beans.get(i).originatingElement;
+    }
+    return elements;
   }
   
   void processRound(RoundEnvironment roundEnv) {
@@ -238,5 +251,4 @@ final class EjbCollector {
     }
     
   }
-  
 }

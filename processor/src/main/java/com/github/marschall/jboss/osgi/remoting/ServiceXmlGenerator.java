@@ -1,11 +1,18 @@
 package com.github.marschall.jboss.osgi.remoting;
 
 import static javax.lang.model.SourceVersion.RELEASE_6;
+import static javax.tools.Diagnostic.Kind.ERROR;
+import static javax.tools.StandardLocation.CLASS_OUTPUT;
 
+import java.io.BufferedOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Map;
 import java.util.Set;
 
 import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.Filer;
+import javax.annotation.processing.Messager;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
@@ -13,6 +20,10 @@ import javax.annotation.processing.SupportedOptions;
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic.Kind;
+import javax.tools.FileObject;
+import javax.xml.stream.XMLOutputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamWriter;
 
 @SupportedOptions({
   "javax.ejb.module.name",
@@ -29,10 +40,11 @@ import javax.tools.Diagnostic.Kind;
   "javax.ejb.Singleton"
 })
 public class ServiceXmlGenerator extends AbstractProcessor {
-  
+
+  private static final String FILE_NAME = "ejb-client.xml";
   static final String MODULE_NAME_OPTION = "javax.ejb.module.name";
   static final String APPLICATION_NAME_OPTION = "javax.ejb.application.name";
-  
+
   private EjbCollector collector;
   private String applicationName;
   private String moduleName;
@@ -40,7 +52,7 @@ public class ServiceXmlGenerator extends AbstractProcessor {
   public ServiceXmlGenerator() {
     super();
   }
-  
+
   @Override
   public void init(ProcessingEnvironment processingEnv) {
     super.init(processingEnv);
@@ -58,18 +70,83 @@ public class ServiceXmlGenerator extends AbstractProcessor {
     } else if (roundEnv.processingOver()) {
       this.processingEnv.getMessager().printMessage(Kind.NOTE, "module name: " + moduleName);
       this.processingEnv.getMessager().printMessage(Kind.NOTE, "application name: " + applicationName);
-      
+
       for (EjbInfo ejb : this.collector.beans) {
         this.processingEnv.getMessager().printMessage(Kind.NOTE, ejb.nonQualifiedClassName
             + (ejb.stateful ? "(stateful)" : "")
             + " implements " + ejb.remoteInterfaces,
             ejb.originatingElement);
       }
+      this.writeServiceXml();
       return false;
     } else {
       this.collector.processRound(roundEnv);
       return true;
     }
+  }
+
+  private void writeServiceXml() {
+    if (!this.collector.isEmpty()) {
+      Messager messager = this.processingEnv.getMessager();
+      try {
+        this.writeServiceXmlProtected();
+      } catch (IOException e) {
+        messager.printMessage(ERROR, "IOException: " + e.getMessage());
+        throw new RuntimeException("could not write " + FILE_NAME, e);
+      } catch (XMLStreamException e) {
+        messager.printMessage(ERROR, "XMLStreamException: " + e.getMessage());
+        throw new RuntimeException("could not write " + FILE_NAME, e);
+      }
+    }
+    // TODO delete if present?
+
+  }
+
+  private void writeServiceXmlProtected() throws IOException, XMLStreamException {
+    Filer filer = this.processingEnv.getFiler();
+    // TODO update if present?
+    FileObject serviceXml = filer.createResource(CLASS_OUTPUT, "", "OSGI-INF/remote-service/" + FILE_NAME, this.collector.getElements());
+    OutputStream outputStream = serviceXml.openOutputStream();
+    BufferedOutputStream output = null;
+    XMLStreamWriter writer = null;
+    try {
+      output = new BufferedOutputStream(outputStream);
+      XMLOutputFactory factory = XMLOutputFactory.newInstance();
+      // TODO tweak options
+      String encoding = "UTF-8";
+      writer = factory.createXMLStreamWriter(output, encoding);
+      writer.writeStartDocument(encoding, "1.0");
+      
+      writeServiceDescriptons(writer);
+      
+      writer.writeEndDocument();
+    } finally {
+      if (writer != null) {
+        writer.close();
+      }
+      if (output != null) {
+        output.close();
+      }
+      outputStream.close();
+    }
+  }
+
+  private void writeServiceDescriptons(XMLStreamWriter writer) throws XMLStreamException {
+//    writer.writeStartElement("http://www.osgi.org/xmlns/sd/v1.0.0", "service-descriptions");
+    writer.writeStartElement("service-descriptions");
+    writer.writeDefaultNamespace("http://www.osgi.org/xmlns/sd/v1.0.0");
+    
+    for (EjbInfo bean : this.collector.beans) {
+      this.writeServiceDescripton(bean, writer);
+    }
+    
+    writer.writeEndElement(); //service-descriptions
+  }
+
+  private void writeServiceDescripton(EjbInfo bean, XMLStreamWriter writer) throws XMLStreamException {
+    writer.writeStartElement("service-description");
+    
+    writer.writeEndElement(); //service-description
   }
 
 }
