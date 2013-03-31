@@ -7,7 +7,6 @@ import static javax.xml.stream.XMLInputFactory.IS_VALIDATING;
 import static javax.xml.stream.XMLInputFactory.SUPPORT_DTD;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Proxy;
 import java.net.URL;
 import java.util.ArrayList;
@@ -31,7 +30,6 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
 
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
@@ -45,7 +43,7 @@ final class ProxyService implements BundleListener {
    * The symbolic names of the bundles that have to be added to the
    * class loader of each client bundle. This contains the classes need
    * by jboss-remoting, not the classes need by the client bundle. Those
-   * should be dealt with by the manifest of the client bundle. 
+   * should be dealt with by the manifest of the client bundle.
    */
   // mvn dependency:copy-dependencies -DoutputDirectory=lib
   // unzip -c jboss-transaction-api_1.1_spec-1.0.1.Final.jar META-INF/MANIFEST.MF
@@ -65,23 +63,23 @@ final class ProxyService implements BundleListener {
 
   private final ConcurrentMap<Bundle, BundleProxyContext> contexts;
 
-  private final XMLInputFactory inputFactory;
+  private final ServiceXmlParser parser;
 
   private final BundleContext bundleContext;
 
-  private final Logger logger;
+  private final LoggerBridge logger;
 
   private final ClassLoader parent;
 
 
-  ProxyService(BundleContext bundleContext, Logger logger) {
+  ProxyService(BundleContext bundleContext, LoggerBridge logger) {
     this.bundleContext = bundleContext;
     this.logger = logger;
     this.contexts = new ConcurrentHashMap<Bundle, BundleProxyContext>();
-    this.inputFactory = this.createInputFactory();
+    this.parser = new ServiceXmlParser();
     this.parent = new BundlesProxyClassLoader(this.lookUpParentBundles(bundleContext));
   }
-  
+
   private Collection<Bundle> lookUpParentBundles(BundleContext bundleContext) {
     Set<String> symbolicNames = new HashSet<String>(Arrays.asList(PARENT_BUNDLE_IDS));
     Map<String, Bundle> found = new HashMap<String, Bundle>(symbolicNames.size());
@@ -96,16 +94,6 @@ final class ProxyService implements BundleListener {
     return found.values();
   }
 
-  private XMLInputFactory createInputFactory() {
-    XMLInputFactory factory = XMLInputFactory.newInstance();
-    //disable various features that we don't need and just cost performance
-    factory.setProperty(IS_VALIDATING, Boolean.FALSE);
-    factory.setProperty(IS_NAMESPACE_AWARE, Boolean.FALSE);
-    factory.setProperty(IS_REPLACING_ENTITY_REFERENCES, Boolean.FALSE);
-    factory.setProperty(IS_SUPPORTING_EXTERNAL_ENTITIES, Boolean.FALSE);
-    factory.setProperty(SUPPORT_DTD, Boolean.FALSE);
-    return factory;
-  }
 
   void initialBundles(Bundle[] bundles) {
     for (Bundle bundle : bundles) {
@@ -159,7 +147,7 @@ final class ProxyService implements BundleListener {
       for (URL serviceXml : serviceUrls) {
         ParseResult result;
         try {
-          result = this.parseServiceXml(serviceXml);
+          result = this.parser.parseServiceXml(serviceXml);
         } catch (IOException e) {
           this.logger.warning("could not parse XML: " + serviceXml + " in bundle:" + bundle + ", ignoring",  e);
           continue;
@@ -253,26 +241,6 @@ final class ProxyService implements BundleListener {
     return interfaceClazz.cast(proxy);
   }
 
-  private ParseResult parseServiceXml(URL serviceXml) throws IOException, XMLStreamException {
-    InputStream stream = serviceXml.openStream();
-    try {
-      XMLStreamReader reader = this.inputFactory.createXMLStreamReader(stream);
-      try {
-        return this.parseSafe(reader);
-      } finally {
-        // TODO CR
-        reader.close();
-      }
-    } finally {
-      stream.close();
-    }
-
-  }
-  
-  private ParseResult parseSafe(XMLStreamReader reader) {
-    
-  }
-
   private Context createNamingContext() throws NamingException {
     Properties jndiProps = new Properties();
     jndiProps.put(Context.INITIAL_CONTEXT_FACTORY, "org.jboss.naming.remote.client.InitialContextFactory");
@@ -303,7 +271,7 @@ final class ProxyService implements BundleListener {
     case BundleEvent.STARTING:
       this.addPotentialBundle(event.getBundle());
       break;
-    case BundleEvent.STOPPING: 
+    case BundleEvent.STOPPING:
       this.removePotentialBundle(event.getBundle());
       break;
 
@@ -322,55 +290,6 @@ final class ProxyService implements BundleListener {
         this.logger.warning("could not unregister service", e);
       }
     }
-  }
-
-  static final class ParseResult {
-
-    final List<ServiceInfo> services;
-
-    ParseResult(List<ServiceInfo> services) {
-      this.services = services;
-    }
-
-    boolean isEmpty() {
-      return this.services.isEmpty();
-    }
-
-    int size() {
-      return this.services.size();
-    }
-
-    static ParseResult flatten(List<ParseResult> results) {
-      if (results.isEmpty()) {
-        throw new IllegalArgumentException("collection must not be empty");
-      }
-      if (results.size() == 1) {
-        return results.get(0);
-      }
-
-      int size = 0;
-      for (ParseResult result : results) {
-        size += result.size();
-      }
-      List<ServiceInfo> services = new ArrayList<ServiceInfo>(size);
-      for (ParseResult result : results) {
-        services.addAll(result.services);
-      }
-      return new ParseResult(services);
-    }
-
-  }
-
-  static final class ServiceInfo {
-
-    final String interfaceName;
-    final String jndiName;
-
-    ServiceInfo(String interfaceName, String jndiName) {
-      this.interfaceName = interfaceName;
-      this.jndiName = jndiName;
-    }
-
   }
 
   static final class BundleProxyContext {

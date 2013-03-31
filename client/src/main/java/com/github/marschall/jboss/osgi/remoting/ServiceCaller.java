@@ -1,24 +1,24 @@
 package com.github.marschall.jboss.osgi.remoting;
 
+import static org.osgi.framework.ServiceException.REMOTE;
+
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
-
-import static org.osgi.framework.ServiceException.REMOTE;
 
 import org.osgi.framework.ServiceException;
 
 class ServiceCaller implements InvocationHandler {
-  
+
   private final Object serviceProxy;
-  
+
   private final ClassLoader classLoader;
 
-  private final Logger logger;
+  private final LoggerBridge logger;
 
   private volatile boolean valid;
 
-  
-  ServiceCaller(Object serviceProxy, ClassLoader classLoader, Logger logger) {
+
+  ServiceCaller(Object serviceProxy, ClassLoader classLoader, LoggerBridge logger) {
     this.serviceProxy = serviceProxy;
     this.classLoader = classLoader;
     this.logger = logger;

@@ -7,7 +7,7 @@ import javax.naming.NamingException;
 public interface InitialContextService {
 
   // TODO identifier (eg. jboss) is a service property
-  
+
   Context getInitialContext() throws NamingException;
 
 }

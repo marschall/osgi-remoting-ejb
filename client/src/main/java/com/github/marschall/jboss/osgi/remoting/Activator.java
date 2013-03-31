@@ -5,16 +5,16 @@ import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 
 public class Activator implements BundleActivator {
-  
+
   private volatile ProxyService proxyService;
-  private volatile Logger logger;
+  private volatile LoggerBridge logger;
 
   @Override
   public void start(BundleContext context) throws Exception {
-    this.logger = new Logger(context);
+    this.logger = new LoggerBridge(context);
     this.proxyService = new ProxyService(context, this.logger);
     context.addBundleListener(this.proxyService);
-    
+
     Bundle[] bundles = context.getBundles();
     this.proxyService.initialBundles(bundles);
   }
@@ -24,7 +24,7 @@ public class Activator implements BundleActivator {
     context.removeBundleListener(this.proxyService);
     this.proxyService.stop();
     this.logger.stop();
-    
+
     this.proxyService = null;
     this.logger = null;
   }

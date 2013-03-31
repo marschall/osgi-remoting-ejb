@@ -12,8 +12,8 @@ import java.util.NoSuchElementException;
 import org.osgi.framework.Bundle;
 
 final class BundlesProxyClassLoader extends ClassLoader {
-  
-  
+
+
   static {
     // try to call registerAsParallelCapable
     try {
@@ -30,28 +30,28 @@ final class BundlesProxyClassLoader extends ClassLoader {
       // ignore, on 1.7
     }
   }
-  
-  
+
+
   private final Collection<Bundle> bundles;
 
   BundlesProxyClassLoader(Collection<Bundle> bundles) {
     this.bundles = bundles;
   }
-  
 
 
-  // Note: Both ClassLoader.getResources(...) and bundle.getResources(...) consult 
-  // the boot classloader. As a result, BundleProxyClassLoader.getResources(...) 
-  // might return duplicate results from the boot classloader. Prior to Java 5 
+
+  // Note: Both ClassLoader.getResources(...) and bundle.getResources(...) consult
+  // the boot classloader. As a result, BundleProxyClassLoader.getResources(...)
+  // might return duplicate results from the boot classloader. Prior to Java 5
   // Classloader.getResources was marked final. If your target environment requires
-  // at least Java 5 you can prevent the occurence of duplicate boot classloader 
-  // resources by overriding ClassLoader.getResources(...) instead of 
-  // ClassLoader.findResources(...).   
+  // at least Java 5 you can prevent the occurence of duplicate boot classloader
+  // resources by overriding ClassLoader.getResources(...) instead of
+  // ClassLoader.findResources(...).
   @Override
   public Enumeration<URL> findResources(String name) throws IOException {
     return new ResourceEnumeration(name);
   }
-  
+
   class ResourceEnumeration implements Enumeration<URL> {
 
     private URL url;
@@ -59,12 +59,12 @@ final class BundlesProxyClassLoader extends ClassLoader {
     private Bundle bundle;
     private Enumeration<URL> enumeration;
     private final String name;
-    
+
     ResourceEnumeration(String name) {
       this.name = name;
       this.bundleIterator = bundles.iterator();
     }
-    
+
     private boolean next() {
       if (this.url != null) {
         return true;
@@ -77,7 +77,7 @@ final class BundlesProxyClassLoader extends ClassLoader {
           // no more bundles left, stop searching
           return false;
         }
-        
+
         try {
           this.enumeration = this.bundle.getResources(name);
         } catch (IOException excetpion) {
@@ -88,7 +88,7 @@ final class BundlesProxyClassLoader extends ClassLoader {
       this.url = this.enumeration.nextElement();
       return true;
     }
-    
+
     @Override
     public boolean hasMoreElements() {
       return next();
@@ -103,9 +103,9 @@ final class BundlesProxyClassLoader extends ClassLoader {
       this.url = null;
       return u;
     }
-    
-    
-    
+
+
+
   }
 
   @Override

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service-descriptions xmlns="http://www.osgi.org/xmlns/sd/v1.0.0">
+  <service-description>
+    <provide interface="com.github.marschall.jboss.osgi.remoting.StatelessRemote1"></provide>
+    <property name="osgi.remote.interfaces">*</property>
+    <property name="osgi.remote.configuration.type">pojo</property>
+    <property name="osgi.remote.configuration.pojo.jndiName">ejb:jboss-osgi-remoting-sample-ear/jboss-osgi-remoting-sample-ejb//StatelessBean!com.github.marschall.jboss.osgi.remoting.StatelessRemote1
+    </property>
+  </service-description>
+  <service-description>
+    <provide interface="com.github.marschall.jboss.osgi.remoting.StatelessRemote2"></provide>
+    <property name="osgi.remote.interfaces">*</property>
+    <property name="osgi.remote.configuration.type">pojo</property>
+    <property name="osgi.remote.configuration.pojo.jndiName">ejb:jboss-osgi-remoting-sample-ear/jboss-osgi-remoting-sample-ejb//StatelessBean!com.github.marschall.jboss.osgi.remoting.StatelessRemote2
+    </property>
+  </service-description>
+  <service-description>
+    <provide interface="com.github.marschall.jboss.osgi.remoting.StatefulRemote1"></provide>
+    <property name="osgi.remote.interfaces">*</property>
+    <property name="osgi.remote.configuration.type">pojo</property>
+    <property name="osgi.remote.configuration.pojo.jndiName">ejb:jboss-osgi-remoting-sample-ear/jboss-osgi-remoting-sample-ejb//StatefulBean!com.github.marschall.jboss.osgi.remoting.StatefulRemote1?stateful
+    </property>
+  </service-description>
+  <service-description>
+    <provide interface="com.github.marschall.jboss.osgi.remoting.StatefulRemote2"></provide>
+    <property name="osgi.remote.interfaces">*</property>
+    <property name="osgi.remote.configuration.type">pojo</property>
+    <property name="osgi.remote.configuration.pojo.jndiName">ejb:jboss-osgi-remoting-sample-ear/jboss-osgi-remoting-sample-ejb//StatefulBean!com.github.marschall.jboss.osgi.remoting.StatefulRemote2?stateful
+    </property>
+  </service-description>
+</service-descriptions>
