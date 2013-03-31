@@ -1,11 +1,5 @@
 package com.github.marschall.jboss.osgi.remoting;
 
-import static javax.xml.stream.XMLInputFactory.IS_NAMESPACE_AWARE;
-import static javax.xml.stream.XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES;
-import static javax.xml.stream.XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES;
-import static javax.xml.stream.XMLInputFactory.IS_VALIDATING;
-import static javax.xml.stream.XMLInputFactory.SUPPORT_DTD;
-
 import java.io.IOException;
 import java.lang.reflect.Proxy;
 import java.net.URL;
@@ -28,7 +22,6 @@ import java.util.concurrent.ConcurrentMap;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
-import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 
 import org.osgi.framework.Bundle;
