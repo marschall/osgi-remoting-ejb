@@ -151,10 +151,11 @@ final class ServiceXmlParser {
       if (event == END_ELEMENT) {
         break;
       } else if (event == CHARACTERS || event == CDATA) {
+        // TODO check for all blanks
         builder.append(reader.getText());
       }
     }
-    return builder.toString();
+    return builder.toString().trim();
   }
 
   private void consumeElement(XMLStreamReader reader) throws XMLStreamException {
