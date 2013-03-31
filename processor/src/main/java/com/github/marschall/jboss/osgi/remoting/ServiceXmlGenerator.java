@@ -71,12 +71,6 @@ public class ServiceXmlGenerator extends AbstractProcessor {
       this.processingEnv.getMessager().printMessage(Kind.NOTE, "module name: " + moduleName);
       this.processingEnv.getMessager().printMessage(Kind.NOTE, "application name: " + applicationName);
 
-      for (EjbInfo ejb : this.collector.beans) {
-        this.processingEnv.getMessager().printMessage(Kind.NOTE, ejb.nonQualifiedClassName
-            + (ejb.stateful ? "(stateful)" : "")
-            + " implements " + ejb.remoteInterfaces,
-            ejb.originatingElement);
-      }
       this.writeServiceXml();
       return false;
     } else {
@@ -144,9 +138,53 @@ public class ServiceXmlGenerator extends AbstractProcessor {
   }
 
   private void writeServiceDescripton(EjbInfo bean, XMLStreamWriter writer) throws XMLStreamException {
+    for (String remoteInterface : bean.remoteInterfaces) {
+      this.writeServiceDescripton(bean, remoteInterface, writer);
+    }
+    
+  }
+
+  private void writeServiceDescripton(EjbInfo bean, String remoteInterface, XMLStreamWriter writer) throws XMLStreamException {
     writer.writeStartElement("service-description");
     
+    // <provide interface="org.coderthoughts.auction.AuctionService"/>
+    writer.writeStartElement("provide");
+    writer.writeAttribute("interface", remoteInterface);
+    writer.writeEndElement(); //provide
+    
+    // <property name="osgi.remote.interfaces">*</property>
+    writeProperty("osgi.remote.interfaces", "*", writer);
+    
+    // <property name="osgi.remote.configuration.type">pojo</property>
+    writeProperty("osgi.remote.configuration.type", "pojo", writer);
+    
+    // <property name="osgi.remote.configuration.pojo.jndiName">foo/bar</property>
+    String jndiName = jndiName(bean, remoteInterface);
+    writeProperty("osgi.remote.configuration.pojo.jndiName", jndiName, writer);
+    // <property name="osgi.remote.configuration.pojo.jndiName">foo/bar</property>
+    // TODO make configurable
+    String jbossEjbName = jbossEjbName(bean, remoteInterface);
+    writeProperty("osgi.remote.configuration.pojo.jbossEjbName", jbossEjbName, writer);
+    
     writer.writeEndElement(); //service-description
+  }
+
+  private String jndiName(EjbInfo bean, String remoteInterface) {
+    // TODO optimize
+    return this.applicationName + '/' + this.moduleName +'/' + bean.nonQualifiedClassName + '!' + remoteInterface;
+  }
+  
+  private String jbossEjbName(EjbInfo bean, String remoteInterface) {
+    // TODO distinct name
+    return this.applicationName + '/' + this.moduleName +'/' + bean.nonQualifiedClassName + '!' + remoteInterface
+        + (bean.stateful ? "?stateful" : "");
+  }
+
+  void writeProperty(String name, String value, XMLStreamWriter writer) throws XMLStreamException {
+    writer.writeStartElement("property");
+    writer.writeAttribute("name", name);
+    writer.writeCharacters(value);
+    writer.writeEndElement(); // property
   }
 
 }

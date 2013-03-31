@@ -98,8 +98,8 @@ final class EjbCollector {
         remoteInterfaceNames = this.getRemoteInterfaceNamesFromImplementation(ejb);
       }
       if (!remoteInterfaceNames.isEmpty()) {
-        String fullyQualifiedClassName = ejb.accept(new TypeNameVisitor(), null);
-        EjbInfo ejbInfo = new EjbInfo(fullyQualifiedClassName, stateful, remoteInterfaceNames, ejb);
+        String nonQualifiedClassName = ejb.accept(SimpleTypeNameVisitor.INSTANCE, null);
+        EjbInfo ejbInfo = new EjbInfo(nonQualifiedClassName, stateful, remoteInterfaceNames, ejb);
         this.beans.add(ejbInfo);
       }
     }
@@ -126,7 +126,7 @@ final class EjbCollector {
     List<String> interfaceNames = new ArrayList<String>(remoteInterfaces.size());
     for (TypeMirror typeMirror : remoteInterfaces) {
       Element element = this.types.asElement(typeMirror);
-      String typeName = element.accept(TypeNameVisitor.INSTANCE, null);
+      String typeName = element.accept(QualifiedTypeNameVisitor.INSTANCE, null);
       interfaceNames.add(typeName);
     }
     return interfaceNames;
@@ -200,7 +200,7 @@ final class EjbCollector {
     @Override
     public List<String> visitType(TypeMirror type, List<String> accumulator) {
       Element element = this.types.asElement(type);
-      String typeName = element.accept(TypeNameVisitor.INSTANCE, null);
+      String typeName = element.accept(QualifiedTypeNameVisitor.INSTANCE, null);
       if (typeName != null) {
         accumulator.add(typeName);
       }
@@ -209,15 +209,26 @@ final class EjbCollector {
 
   }
   
-  static final class TypeNameVisitor extends SimpleElementVisitor6<String, Void> {
+  static final class QualifiedTypeNameVisitor extends SimpleElementVisitor6<String, Void> {
     
-    static final ElementVisitor<String, Void> INSTANCE = new TypeNameVisitor();
+    static final ElementVisitor<String, Void> INSTANCE = new QualifiedTypeNameVisitor();
 
     @Override
     public String visitType(TypeElement type, Void p) {
       return type.getQualifiedName().toString();
     }
 
+  }
+  
+  static final class SimpleTypeNameVisitor extends SimpleElementVisitor6<String, Void> {
+    
+    static final ElementVisitor<String, Void> INSTANCE = new SimpleTypeNameVisitor();
+    
+    @Override
+    public String visitType(TypeElement type, Void p) {
+      return type.getSimpleName().toString();
+    }
+    
   }
   
   static final class IsAnnotatedWithRemote extends SimpleElementVisitor6<Boolean, EjbCollector> {
