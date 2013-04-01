@@ -104,7 +104,6 @@ final class ServiceXmlParser {
 
 
   private ServiceInfo parseServiceDescription(XMLStreamReader reader) throws XMLStreamException {
-    // TODO make sure service description is not from other provider
     String interfaceName = null; 
     String jndiName = null;
     while (reader.hasNext()) {
@@ -116,7 +115,13 @@ final class ServiceXmlParser {
           this.consumeElement(reader);
         } else if (localName.equals("property")) {
           String propertyName = this.readAttributeValue("name", reader);
-          if (propertyName.equals("osgi.remote.configuration.pojo.jndiName")) {
+          if (propertyName.equals("service.exported.configs")) {
+            String provider = this.parseStringContent(reader);
+            if (!provider.equals("com.github.marschall.ejb")) {
+              // intended for somebody else
+              return null;
+            }
+          } else if (propertyName.equals("com.github.marschall.ejb.jndiName")) {
             jndiName = this.parseStringContent(reader);
           } else {
             this.consumeElement(reader);

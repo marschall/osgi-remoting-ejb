@@ -84,6 +84,7 @@ public class ServiceXmlGenerator extends AbstractProcessor {
   }
 
   private void writeServiceXml() {
+    // TODO move to own class
     if (!this.collector.isEmpty()) {
       Messager messager = this.processingEnv.getMessager();
       try {
@@ -156,15 +157,18 @@ public class ServiceXmlGenerator extends AbstractProcessor {
     writer.writeAttribute("interface", remoteInterface);
     writer.writeEndElement(); //provide
     
-    // <property name="osgi.remote.interfaces">*</property>
-    writeProperty("osgi.remote.interfaces", "*", writer);
+    // http://cxf.apache.org/distributed-osgi-reference.html
+    // http://wiki.eclipse.org/EIG:OSGi_Remote_Services
     
-    // <property name="osgi.remote.configuration.type">pojo</property>
-    writeProperty("osgi.remote.configuration.type", "pojo", writer);
+    // <property name="service.exported.configs">com.github.marschall.ejb</property>
+    writeProperty("service.exported.interfaces", "*", writer);
     
-    // <property name="osgi.remote.configuration.pojo.jndiName">foo/bar</property>
+    // <property name="service.exported.configs">pojo</property>
+    writeProperty("service.exported.configs", "com.github.marschall.ejb", writer);
+    
+    // <property name="com.github.marschall.ejb">foo/bar</property>
     String jndiName = jndiName(bean, remoteInterface);
-    writeProperty("osgi.remote.configuration.pojo.jndiName", jndiName, writer);
+    writeProperty("com.github.marschall.ejb.jndiName", jndiName, writer);
     
     writer.writeEndElement(); //service-description
   }
