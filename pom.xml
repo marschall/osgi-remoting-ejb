@@ -3,18 +3,18 @@
 
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.github.marschall</groupId>
-  <artifactId>jboss-osgi-remoting-parent</artifactId>
+  <artifactId>osgi-remoting-ejb-parent</artifactId>
   <version>0.0.1-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>JBoss OSGi Remoting</name>
-  <description>An OSGi remoting implementaiton that uses JBoss Remtoing.</description>
+  <description>An OSGi remoting implementaiton that uses EJB Remtoing.</description>
   <inceptionYear>2013</inceptionYear>
 
-  <url>https://github.com/marschall/jboss-osgi-remoting</url>
+  <url>https://github.com/marschall/osgi-remoting-ejb</url>
 
   <scm>
-    <connection>scm:git:git@github.com:marschall/jboss-osgi-remoting.git</connection>
-    <developerConnection>scm:git:git@github.com:marschall/jboss-osgi-remoting.git</developerConnection>
+    <connection>scm:git:git@github.com:marschall/osgi-remoting-ejb.git</connection>
+    <developerConnection>scm:git:git@github.com:marschall/osgi-remoting-ejb.git</developerConnection>
     <url>${project.url}</url>
     <tag>HEAD</tag>
   </scm>
@@ -22,6 +22,9 @@
   <modules>
     <module>client</module>
     <module>processor</module>
+    <module>sample</module>
+    <module>jboss</module>
+    <module>glassfish</module>
   </modules>
 
   <developers>

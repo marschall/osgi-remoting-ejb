@@ -1,1 +1,1 @@
-com.github.marschall.jboss.osgi.remoting.ServiceXmlGenerator
+com.github.marschall.osgi.remoting.ejb.processor.ServiceXmlGenerator

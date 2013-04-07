@@ -3,29 +3,33 @@
   <service-description>
     <provide interface="com.github.marschall.jboss.osgi.remoting.StatelessRemote1"></provide>
     <property name="service.exported.interfaces">*</property>
-    <property name="service.exported.configs">com.github.marschall.ejb</property>
-    <property name="com.github.marschall.ejb.jndiName">ejb:jboss-osgi-remoting-sample-ear/jboss-osgi-remoting-sample-ejb//StatelessBean!com.github.marschall.jboss.osgi.remoting.StatelessRemote1
+    <property name="service.exported.configs">com.github.marschall.osgi.remoting.ejb
+    </property>
+    <property name="com.github.marschall.osgi.remoting.ejb.jndiName">ejb:jboss-osgi-remoting-sample-ear/osgi-remoting-ejb-sample-ejb//StatelessBean!com.github.marschall.jboss.osgi.remoting.StatelessRemote1
     </property>
   </service-description>
   <service-description>
     <provide interface="com.github.marschall.jboss.osgi.remoting.StatelessRemote2"></provide>
     <property name="service.exported.interfaces">*</property>
-    <property name="service.exported.configs">com.github.marschall.ejb</property>
-    <property name="com.github.marschall.ejb.jndiName">ejb:jboss-osgi-remoting-sample-ear/jboss-osgi-remoting-sample-ejb//StatelessBean!com.github.marschall.jboss.osgi.remoting.StatelessRemote2
+    <property name="service.exported.configs">com.github.marschall.osgi.remoting.ejb
+    </property>
+    <property name="com.github.marschall.osgi.remoting.ejb.jndiName">ejb:jboss-osgi-remoting-sample-ear/osgi-remoting-ejb-sample-ejb//StatelessBean!com.github.marschall.jboss.osgi.remoting.StatelessRemote2
     </property>
   </service-description>
   <service-description>
     <provide interface="com.github.marschall.jboss.osgi.remoting.StatefulRemote1"></provide>
     <property name="service.exported.interfaces">*</property>
-    <property name="service.exported.configs">com.github.marschall.ejb</property>
-    <property name="com.github.marschall.ejb.jndiName">ejb:jboss-osgi-remoting-sample-ear/jboss-osgi-remoting-sample-ejb//StatefulBean!com.github.marschall.jboss.osgi.remoting.StatefulRemote1?stateful
+    <property name="service.exported.configs">com.github.marschall.osgi.remoting.ejb
+    </property>
+    <property name="com.github.marschall.osgi.remoting.ejb.jndiName">ejb:jboss-osgi-remoting-sample-ear/osgi-remoting-ejb-sample-ejb//StatefulBean!com.github.marschall.jboss.osgi.remoting.StatefulRemote1?stateful
     </property>
   </service-description>
   <service-description>
     <provide interface="com.github.marschall.jboss.osgi.remoting.StatefulRemote2"></provide>
     <property name="service.exported.interfaces">*</property>
-    <property name="service.exported.configs">com.github.marschall.ejb</property>
-    <property name="com.github.marschall.ejb.jndiName">ejb:jboss-osgi-remoting-sample-ear/jboss-osgi-remoting-sample-ejb//StatefulBean!com.github.marschall.jboss.osgi.remoting.StatefulRemote2?stateful
+    <property name="service.exported.configs">com.github.marschall.osgi.remoting.ejb
+    </property>
+    <property name="com.github.marschall.osgi.remoting.ejb.jndiName">ejb:jboss-osgi-remoting-sample-ear/osgi-remoting-ejb-sample-ejb//StatefulBean!com.github.marschall.jboss.osgi.remoting.StatefulRemote2?stateful
     </property>
   </service-description>
 </service-descriptions>

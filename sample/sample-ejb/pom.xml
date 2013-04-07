@@ -4,11 +4,11 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>com.github.marschall</groupId>
-    <artifactId>jboss-osgi-remoting-sample</artifactId>
+    <artifactId>osgi-remoting-ejb-sample</artifactId>
     <version>0.0.1-SNAPSHOT</version>
   </parent>
 
-  <artifactId>jboss-osgi-remoting-sample-ejb</artifactId>
+  <artifactId>osgi-remoting-ejb-sample-ejb</artifactId>
   <packaging>ejb</packaging>
 
   <dependencies>
@@ -19,7 +19,7 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>jboss-osgi-remoting-processor</artifactId>
+      <artifactId>osgi-remoting-ejb-processor</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>

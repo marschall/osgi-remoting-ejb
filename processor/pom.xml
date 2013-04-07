@@ -4,11 +4,11 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>com.github.marschall</groupId>
-    <artifactId>jboss-osgi-remoting-parent</artifactId>
+    <artifactId>osgi-remoting-ejb-parent</artifactId>
     <version>0.0.1-SNAPSHOT</version>
   </parent>
 
-  <artifactId>jboss-osgi-remoting-processor</artifactId>
+  <artifactId>osgi-remoting-ejb-processor</artifactId>
 
   <build>
     <plugins>

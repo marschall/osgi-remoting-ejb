@@ -4,17 +4,17 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>com.github.marschall</groupId>
-    <artifactId>jboss-osgi-remoting-sample</artifactId>
+    <artifactId>osgi-remoting-ejb-sample</artifactId>
     <version>0.0.1-SNAPSHOT</version>
   </parent>
 
-  <artifactId>jboss-osgi-remoting-sample-ear</artifactId>
+  <artifactId>osgi-remoting-ejb-sample-ear</artifactId>
   <packaging>ear</packaging>
   
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>jboss-osgi-remoting-sample-ejb</artifactId>
+      <artifactId>osgi-remoting-ejb-sample-ejb</artifactId>
       <version>${project.version}</version>
       <type>ejb</type>
     </dependency>
