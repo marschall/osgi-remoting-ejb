@@ -31,29 +31,7 @@ import org.osgi.framework.BundleListener;
 import org.osgi.framework.ServiceRegistration;
 
 final class ProxyService implements BundleListener {
-
-  /**
-   * The symbolic names of the bundles that have to be added to the
-   * class loader of each client bundle. This contains the classes need
-   * by jboss-remoting, not the classes need by the client bundle. Those
-   * should be dealt with by the manifest of the client bundle.
-   */
-  // mvn dependency:copy-dependencies -DoutputDirectory=lib
-  // unzip -c jboss-transaction-api_1.1_spec-1.0.1.Final.jar META-INF/MANIFEST.MF
-  private static final String[] PARENT_BUNDLE_IDS = {
-    // TODO jboss specific
-    "org.jboss.spec.javax.transaction.jboss-transaction-api_1.1_spec",
-    "org.jboss.spec.javax.ejb.jboss-ejb-api_3.1_spec",
-    // missing SASL bundle
-    // http://github.com/jboss/jboss-parent-pom/jboss-sasl
-    // jboss-marshalling-river
-    // jboss-marshalling
-    // jboss-ejb-client
-    // xnio-nio
-    // xnio-api
-    // http://github.com/jboss/jboss-parent-pom/xnio-all/xnio-api
-  };
-
+  
   private final ConcurrentMap<Bundle, BundleProxyContext> contexts;
 
   private final ServiceXmlParser parser;
@@ -64,17 +42,20 @@ final class ProxyService implements BundleListener {
 
   private final ClassLoader parent;
 
+  private final InitialContextService initialContextService;
 
-  ProxyService(BundleContext bundleContext, LoggerBridge logger) {
+
+  ProxyService(BundleContext bundleContext, LoggerBridge logger, InitialContextService initialContextService) {
     this.bundleContext = bundleContext;
     this.logger = logger;
+    this.initialContextService = initialContextService;
     this.contexts = new ConcurrentHashMap<Bundle, BundleProxyContext>();
     this.parser = new ServiceXmlParser();
     this.parent = new BundlesProxyClassLoader(this.lookUpParentBundles(bundleContext));
   }
 
   private Collection<Bundle> lookUpParentBundles(BundleContext bundleContext) {
-    Set<String> symbolicNames = new HashSet<String>(Arrays.asList(PARENT_BUNDLE_IDS));
+    Set<String> symbolicNames = this.initialContextService.getClientBundleSymbolicNames();
     Map<String, Bundle> found = new HashMap<String, Bundle>(symbolicNames.size());
     for (Bundle bundle : bundleContext.getBundles()) {
       String symbolicName = bundle.getSymbolicName();
@@ -205,9 +186,11 @@ final class ProxyService implements BundleListener {
         callers.add(serviceCaller);
         // TODO properties
         // TODO connection name
+        // org.osgi.framework.Constants objectClass value must be of type String[]
+        // org.osgi.service.remoteserviceadmin.RemoteConstants.ENDPOINT_ID
         Dictionary<String, Object> properties = new Hashtable<String, Object>();
         properties.put("service.imported", true);
-        properties.put("com.github.marschall.ejb.jndiName", info.jndiName);
+        properties.put("com.github.marschall.osgi.remoting.ejb.jndiName", info.jndiName);
         ServiceRegistration<?> serviceRegistration = this.bundleContext.registerService(info.interfaceName, service, properties);
         registrations.add(serviceRegistration);
       }
@@ -236,12 +219,8 @@ final class ProxyService implements BundleListener {
   }
 
   private Context createNamingContext() throws NamingException {
-    Properties jndiProps = new Properties();
-    jndiProps.put(Context.INITIAL_CONTEXT_FACTORY, "org.jboss.naming.remote.client.InitialContextFactory");
-    // TODO configure
-    jndiProps.put(Context.PROVIDER_URL,"remote://localhost:4447");
     // create a namingContext passing these properties
-    return new InitialContext(jndiProps);
+    return new InitialContext(this.initialContextService.getEnvironment());
   }
 
   void removePotentialBundle(Bundle bundle) {

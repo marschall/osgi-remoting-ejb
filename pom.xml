@@ -6,8 +6,8 @@
   <artifactId>osgi-remoting-ejb-parent</artifactId>
   <version>0.0.1-SNAPSHOT</version>
   <packaging>pom</packaging>
-  <name>JBoss OSGi Remoting</name>
-  <description>An OSGi remoting implementaiton that uses EJB Remtoing.</description>
+  <name>OSGi Remoting EJB</name>
+  <description>An OSGi remoting implementaiton that delegates to EJB Remtoing</description>
   <inceptionYear>2013</inceptionYear>
 
   <url>https://github.com/marschall/osgi-remoting-ejb</url>

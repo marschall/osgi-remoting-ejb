@@ -70,9 +70,13 @@
               org.osgi.framework;version="[1.0.0,2.0.0)",
               org.osgi.util.tracker,
               org.osgi.service.log;resolution:=optional,
+              org.osgi.service.remoteserviceadmin;version="[1.0.0,2.0.0)";resolution:=optional,
               javax.xml.stream,
               javax.naming
             </Import-Package>
+            <Export-Package>
+              com.github.marschall.osgi.remoting.ejb
+            </Export-Package>
             <Bundle-SymbolicName>${project.groupId}.${project.artifactId};singleton:=true</Bundle-SymbolicName>
             <Bundle-Activator>com.github.marschall.osgi.remoting.ejb.Activator</Bundle-Activator>
             <Bundle-RequiredExecutionEnvironment>JavaSE-1.7</Bundle-RequiredExecutionEnvironment>
