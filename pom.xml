@@ -24,6 +24,7 @@
     <module>processor</module>
     <module>sample</module>
     <module>jboss</module>
+    <module>jboss-client</module>
     <module>glassfish</module>
   </modules>
 

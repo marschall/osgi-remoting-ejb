@@ -1,0 +1,77 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>com.github.marschall</groupId>
+    <artifactId>osgi-remoting-ejb-parent</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>osgi-remoting-ejb-jboss-client</artifactId>
+  <packaging>bundle</packaging>
+
+  <dependencies>
+
+    <!-- JBoss EJB client API jar. We use runtime scope because the EJB client 
+      API isn't directly used in this example. We just need it in our runtime classpath -->
+    <dependency>
+      <groupId>org.jboss</groupId>
+      <artifactId>jboss-ejb-client</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+
+    <!-- client communications with the server use XNIO -->
+
+    <dependency>
+      <groupId>org.jboss.xnio</groupId>
+      <artifactId>xnio-nio</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+
+    <!-- The client needs JBoss remoting to access the server -->
+    <dependency>
+      <groupId>org.jboss.remoting3</groupId>
+      <artifactId>jboss-remoting</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+
+    <!-- Remote EJB accesses can be secured -->
+    <dependency>
+      <groupId>org.jboss.sasl</groupId>
+      <artifactId>jboss-sasl</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+
+    <!-- data serialization for invoking remote EJBs -->
+    <dependency>
+      <groupId>org.jboss.marshalling</groupId>
+      <artifactId>jboss-marshalling-river</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+        <extensions>true</extensions>
+        <configuration>
+          <archive>
+            <index>true</index>
+          </archive>
+          <instructions>
+            <Bundle-SymbolicName>${project.groupId}.${project.artifactId};singleton:=true</Bundle-SymbolicName>
+            <Bundle-RequiredExecutionEnvironment>JavaSE-1.6</Bundle-RequiredExecutionEnvironment>
+            <Embed-Dependency>*;scope=compile|runtime;inline=false;artifactId=!jboss-logging</Embed-Dependency>
+            <Embed-Transitive>true</Embed-Transitive>
+            <Export-Package>*;-split-package:=merge-last</Export-Package>
+            <Bundle-ClassPath>{maven-dependencies}</Bundle-ClassPath>
+          </instructions>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>
