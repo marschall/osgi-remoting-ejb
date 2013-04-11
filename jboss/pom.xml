@@ -14,8 +14,12 @@
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>osgi-remoting-ejb-client</artifactId>
+      <artifactId>osgi-remoting-ejb-api</artifactId>
       <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jboss</groupId>
+      <artifactId>jboss-ejb-client</artifactId>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
@@ -71,14 +75,17 @@
           </archive>
           <instructions>
             <Import-Package>
-              org.osgi.framework;version="[1.0.0,2.0.0)"
+              org.osgi.framework;version="[1.0.0,2.0.0)",
+              *
             </Import-Package>
             <Bundle-SymbolicName>${project.groupId}.${project.artifactId};singleton:=true</Bundle-SymbolicName>
+            <Bundle-ActivationPolicy>lazy</Bundle-ActivationPolicy>
             <Bundle-RequiredExecutionEnvironment>JavaSE-1.6</Bundle-RequiredExecutionEnvironment>
             <!-- http://day-cq.blogspot.ch/2011/04/including-resources-in-osgi-bundle.html -->
             <Include-Resource>
               {maven-resources}
             </Include-Resource>
+            <Service-Component>*</Service-Component>
           </instructions>
         </configuration>
       </plugin>

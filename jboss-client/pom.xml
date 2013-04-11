@@ -63,6 +63,7 @@
           </archive>
           <instructions>
             <Bundle-SymbolicName>${project.groupId}.${project.artifactId};singleton:=true</Bundle-SymbolicName>
+            <Bundle-ActivationPolicy>lazy</Bundle-ActivationPolicy>
             <Bundle-RequiredExecutionEnvironment>JavaSE-1.6</Bundle-RequiredExecutionEnvironment>
             <Embed-Dependency>*;scope=compile|runtime;inline=false;artifactId=!jboss-logging</Embed-Dependency>
             <Embed-Transitive>true</Embed-Transitive>

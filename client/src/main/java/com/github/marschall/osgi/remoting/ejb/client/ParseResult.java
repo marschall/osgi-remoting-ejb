@@ -1,4 +1,4 @@
-package com.github.marschall.osgi.remoting.ejb;
+package com.github.marschall.osgi.remoting.ejb.client;
 
 import java.util.ArrayList;
 import java.util.List;

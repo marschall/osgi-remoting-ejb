@@ -1,4 +1,4 @@
-package com.github.marschall.osgi.remoting.ejb;
+package com.github.marschall.osgi.remoting.ejb.client;
 
 import static javax.xml.stream.XMLInputFactory.IS_NAMESPACE_AWARE;
 import static javax.xml.stream.XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES;

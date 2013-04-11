@@ -1,4 +1,4 @@
-package com.github.marschall.osgi.remoting.ejb;
+package com.github.marschall.osgi.remoting.ejb.client;
 
 import static org.osgi.service.log.LogService.LOG_ERROR;
 import static org.osgi.service.log.LogService.LOG_WARNING;

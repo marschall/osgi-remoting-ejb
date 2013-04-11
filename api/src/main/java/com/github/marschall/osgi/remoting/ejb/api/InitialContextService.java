@@ -1,4 +1,4 @@
-package com.github.marschall.osgi.remoting.ejb;
+package com.github.marschall.osgi.remoting.ejb.api;
 
 import java.util.Hashtable;
 import java.util.Set;
@@ -11,7 +11,7 @@ public interface InitialContextService {
 
   // TODO identifier (eg. jboss) is a service property
 
-  Hashtable<?,?> getEnvironment();
+  public Hashtable<?,?> getEnvironment();
   
   /**
    * The symbolic names of the bundles that have to be added to the
@@ -19,6 +19,6 @@ public interface InitialContextService {
    * by jboss-remoting, not the classes need by the client bundle. Those
    * should be dealt with by the manifest of the client bundle.
    */
-  Set<String> getClientBundleSymbolicNames();
+  public Set<String> getClientBundleSymbolicNames();
 
 }

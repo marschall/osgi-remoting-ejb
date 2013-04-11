@@ -1,4 +1,4 @@
-package com.github.marschall.osgi.remoting.ejb;
+package com.github.marschall.osgi.remoting.ejb.client;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertEquals;
@@ -10,7 +10,7 @@ import java.util.List;
 
 import org.junit.Test;
 
-import com.github.marschall.osgi.remoting.ejb.SuffixList;
+import com.github.marschall.osgi.remoting.ejb.client.SuffixList;
 
 public class SuffixListTest {
 

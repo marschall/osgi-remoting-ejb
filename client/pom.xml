@@ -13,6 +13,11 @@
 
   <dependencies>
     <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>osgi-remoting-ejb-api</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <version>4.11</version>
@@ -71,14 +76,16 @@
               org.osgi.service.log;resolution:=optional,
               org.osgi.service.remoteserviceadmin;version="[1.0.0,2.0.0)";resolution:=optional,
               javax.xml.stream,
+              com.github.marschall.osgi.remoting.ejb.api;version="[${project.version},${project.version}]",
               javax.naming
             </Import-Package>
             <Export-Package>
-              com.github.marschall.osgi.remoting.ejb
+              com.github.marschall.osgi.remoting.ejb.client
             </Export-Package>
-            <Bundle-SymbolicName>${project.groupId}.${project.artifactId};singleton:=true</Bundle-SymbolicName>
-            <Bundle-Activator>com.github.marschall.osgi.remoting.ejb.Activator</Bundle-Activator>
+            <Bundle-Activator>com.github.marschall.osgi.remoting.ejb.client.Activator</Bundle-Activator>
+            <Bundle-ActivationPolicy>lazy</Bundle-ActivationPolicy>
             <Bundle-RequiredExecutionEnvironment>JavaSE-1.6</Bundle-RequiredExecutionEnvironment>
+            <Bundle-SymbolicName>${project.groupId}.${project.artifactId};singleton:=true</Bundle-SymbolicName>
             <Include-Resource>
               {maven-resources}
             </Include-Resource>

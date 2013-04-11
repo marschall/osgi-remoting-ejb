@@ -1,20 +1,17 @@
-package com.github.marschall.osgi.remoting.ejb;
+package com.github.marschall.osgi.remoting.ejb.client;
 
 import java.io.IOException;
 import java.lang.reflect.Proxy;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -29,6 +26,8 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleEvent;
 import org.osgi.framework.BundleListener;
 import org.osgi.framework.ServiceRegistration;
+
+import com.github.marschall.osgi.remoting.ejb.api.InitialContextService;
 
 final class ProxyService implements BundleListener {
   
@@ -220,7 +219,12 @@ final class ProxyService implements BundleListener {
 
   private Context createNamingContext() throws NamingException {
     // create a namingContext passing these properties
-    return new InitialContext(this.initialContextService.getEnvironment());
+    Hashtable<?, ?> environment = this.initialContextService.getEnvironment();
+    if (environment != null) {
+      return new InitialContext(environment);
+    } else {
+      return new InitialContext();
+    }
   }
 
   void removePotentialBundle(Bundle bundle) {

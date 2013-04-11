@@ -1,4 +1,4 @@
-package com.github.marschall.osgi.remoting.ejb;
+package com.github.marschall.osgi.remoting.ejb.client;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -15,9 +15,9 @@ import javax.xml.stream.XMLStreamException;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.github.marschall.osgi.remoting.ejb.ParseResult;
-import com.github.marschall.osgi.remoting.ejb.ServiceInfo;
-import com.github.marschall.osgi.remoting.ejb.ServiceXmlParser;
+import com.github.marschall.osgi.remoting.ejb.client.ParseResult;
+import com.github.marschall.osgi.remoting.ejb.client.ServiceInfo;
+import com.github.marschall.osgi.remoting.ejb.client.ServiceXmlParser;
 
 public class ServiceXmlParserTest {
 
