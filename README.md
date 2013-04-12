@@ -47,7 +47,8 @@ Needs to be started somehow (eg. autostart).
 
 Sample Client
 -------------
-Make sure you deploy org.eclipse.equinox.ds
+Make sure you deploy `org.eclipse.equinox.ds`, `org.eclipse.equinox.util`
+and `org.eclipse.equinox.console` `org.apache.gogo.shell` are recommended
 
 Adding a new Client Library
 ---------------------------

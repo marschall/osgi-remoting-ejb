@@ -77,7 +77,7 @@
             <Include-Resource>
               {maven-resources}
             </Include-Resource>
-            <Service-Component>*</Service-Component>
+            <Service-Component>OSGI-INF/component.xml</Service-Component>
           </instructions>
         </configuration>
       </plugin>

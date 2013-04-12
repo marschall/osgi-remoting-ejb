@@ -8,6 +8,7 @@ import java.util.concurrent.ThreadFactory;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceException;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 
@@ -26,6 +27,9 @@ public class Activator implements BundleActivator {
   public void start(BundleContext context) throws Exception {
     this.logger = new LoggerBridge(context);
     this.initialContextServiceReference = context.getServiceReference(InitialContextService.class);
+    if (initialContextServiceReference == null) {
+      throw new ServiceException("missing initial context servie");
+    }
     
     this.executor = Executors.newSingleThreadScheduledExecutor(new LookUpThreadFactory());
     
