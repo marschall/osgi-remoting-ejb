@@ -48,7 +48,7 @@
         <configuration>
           <compilerArguments>
             <Ajavax.ejb.module.name>${project.artifactId}</Ajavax.ejb.module.name>
-            <Ajavax.ejb.application.name>jboss-osgi-remoting-sample-ear</Ajavax.ejb.application.name>
+            <Ajavax.ejb.application.name>osgi-remoting-ejb-sample-ear</Ajavax.ejb.application.name>
             <Aorg.jboss.distinct.name></Aorg.jboss.distinct.name>
           </compilerArguments>
         </configuration>
