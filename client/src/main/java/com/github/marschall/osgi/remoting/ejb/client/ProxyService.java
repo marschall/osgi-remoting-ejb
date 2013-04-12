@@ -173,18 +173,18 @@ final class ProxyService implements BundleListener, ProxyFlusher {
 
     try {
       for (ServiceInfo info : result.services) {
-        Class<?> interfaceClazz;
+        Class<?> interfaceClass;
         Future<?> serviceProxy;
         try {
-          interfaceClazz = classLoader.loadClass(info.interfaceName);
-          serviceProxy = this.lookUpServiceProxy(interfaceClazz, info.jndiName, namingContext, classLoader);
+          interfaceClass = classLoader.loadClass(info.interfaceName);
+          serviceProxy = this.lookUpServiceProxy(interfaceClass, info.jndiName, namingContext, classLoader);
         } catch (ClassNotFoundException e) {
           this.logger.warning("failed to load interface class: " + info.interfaceName
               + ", remote service will not be available", e);
           continue;
         }
         ServiceCaller serviceCaller = new ServiceCaller(serviceProxy, classLoader, this.logger, info.jndiName);
-        Object service = Proxy.newProxyInstance(classLoader, new Class[]{interfaceClazz}, serviceCaller);
+        Object service = Proxy.newProxyInstance(classLoader, new Class[]{interfaceClass}, serviceCaller);
         callers.add(serviceCaller);
         // TODO properties
         // TODO connection name
