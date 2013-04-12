@@ -4,13 +4,27 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>com.github.marschall</groupId>
-    <artifactId>osgi-remoting-ejb-parent</artifactId>
+    <artifactId>osgi-remoting-ejb-sample</artifactId>
     <version>0.0.1-SNAPSHOT</version>
   </parent>
 
-  <artifactId>osgi-remoting-ejb-api</artifactId>
+  <artifactId>osgi-remoting-ejb-sample-client</artifactId>
   <packaging>bundle</packaging>
 
+  <dependencies>
+    <dependency>
+      <groupId>org.jboss.spec.javax.ejb</groupId>
+      <artifactId>jboss-ejb-api_3.1_spec</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>osgi-remoting-ejb-sample-ejb</artifactId>
+      <version>${project.version}</version>
+      <type>ejb-client</type>
+    </dependency>
+  </dependencies>
+  
   <build>
     <plugins>
       <plugin>
@@ -23,12 +37,11 @@
           </archive>
           <instructions>
             <Import-Package>
-              *;version=${project.version};-split-package:=error;-noimport:=true
+              com.github.marschall.jboss.osgi.remoting.ejb.sample;version=${project.version};-split-package:=error
             </Import-Package>
             <Bundle-SymbolicName>${project.groupId}.${project.artifactId};singleton:=true</Bundle-SymbolicName>
             <Bundle-ActivationPolicy>lazy</Bundle-ActivationPolicy>
             <Bundle-RequiredExecutionEnvironment>JavaSE-1.6</Bundle-RequiredExecutionEnvironment>
-            <!-- http://day-cq.blogspot.ch/2011/04/including-resources-in-osgi-bundle.html -->
           </instructions>
         </configuration>
       </plugin>
