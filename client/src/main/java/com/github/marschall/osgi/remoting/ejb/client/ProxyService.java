@@ -148,7 +148,7 @@ final class ProxyService implements BundleListener, ProxyFlusher {
     ClassLoader oldContextClassLoader = currentThread.getContextClassLoader();
     // switch TCCL only once for all the look ups
     currentThread.setContextClassLoader(classLoader);
-    
+
     List<ServiceCaller> callers = new ArrayList<ServiceCaller>(result.size());
     List<ServiceRegistration<?>> registrations = new ArrayList<ServiceRegistration<?>>(result.size());
     Context namingContext;
@@ -182,7 +182,7 @@ final class ProxyService implements BundleListener, ProxyFlusher {
               + ", remote service will not be available", e);
           continue;
         }
-        ServiceCaller serviceCaller = new ServiceCaller(jBossProxy, classLoader, this.logger);
+        ServiceCaller serviceCaller = new ServiceCaller(jBossProxy, classLoader, this.logger, info.jndiName);
         Object service = Proxy.newProxyInstance(classLoader, new Class[]{interfaceClazz}, serviceCaller);
         callers.add(serviceCaller);
         // TODO properties
@@ -254,14 +254,24 @@ final class ProxyService implements BundleListener, ProxyFlusher {
         break;
     }
   }
-  
+
   @Override
   public void flushProxies() {
+    NamingException lastCause = null;
     for (BundleProxyContext proxyContext : contexts.values()) {
-      proxyContext.flushProxies();
+      try {
+        proxyContext.flushProxies(this.initialContextService);
+      } catch (NamingException e) {
+        // TODO collect exceptions for SE 7
+        this.logger.error("could not flush proxy", e);
+        lastCause = e;
+      }
+    }
+    if (lastCause != null) {
+      throw new RuntimeException("could not flush all proxies", lastCause);
     }
   }
-  
+
   void stop() {
     for (BundleProxyContext context : this.contexts.values()) {
       try {
@@ -274,11 +284,11 @@ final class ProxyService implements BundleListener, ProxyFlusher {
       }
     }
   }
-  
+
 
   static final class BundleProxyContext {
 
-    private final Context namingContext;
+    private volatile Context namingContext;
 
     private final Collection<ServiceCaller> callers;
 
@@ -309,9 +319,28 @@ final class ProxyService implements BundleListener, ProxyFlusher {
         bundleContext.ungetService(registration.getReference());
       }
     }
-    
-    void flushProxies() {
-      // TODO
+
+    void flushProxies(InitialContextService initialContextService) throws NamingException {
+      Thread currentThread = Thread.currentThread();
+      ClassLoader oldClassLoader = currentThread.getContextClassLoader();
+      currentThread.setContextClassLoader(this.classLoader);
+
+      try {
+        this.namingContext.close();
+        Hashtable<?,?> environment = initialContextService.getEnvironment();
+        if (environment != null) {
+          this.namingContext = new InitialContext(environment);
+        } else {
+          this.namingContext = new InitialContext();
+        }
+        for (ServiceCaller caller : this.callers) {
+          // TODO catch NamingException (collect causes for SE 7)
+          caller.flushProxy(this.namingContext);
+        }
+      } finally{
+        currentThread.setContextClassLoader(oldClassLoader);
+      }
+
     }
 
     private void invalidateCallers() {

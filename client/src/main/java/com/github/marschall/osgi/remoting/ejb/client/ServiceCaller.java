@@ -5,11 +5,14 @@ import static org.osgi.framework.ServiceException.REMOTE;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 
+import javax.naming.Context;
+import javax.naming.NamingException;
+
 import org.osgi.framework.ServiceException;
 
 class ServiceCaller implements InvocationHandler {
 
-  private final Object serviceProxy;
+  private volatile Object serviceProxy;
 
   private final ClassLoader classLoader;
 
@@ -17,11 +20,14 @@ class ServiceCaller implements InvocationHandler {
 
   private volatile boolean valid;
 
+  private final String jndiName;
 
-  ServiceCaller(Object serviceProxy, ClassLoader classLoader, LoggerBridge logger) {
+
+  ServiceCaller(Object serviceProxy, ClassLoader classLoader, LoggerBridge logger, String jndiName) {
     this.serviceProxy = serviceProxy;
     this.classLoader = classLoader;
     this.logger = logger;
+    this.jndiName = jndiName;
     this.valid = true;
   }
 
@@ -45,6 +51,10 @@ class ServiceCaller implements InvocationHandler {
     } finally {
       currentThread.setContextClassLoader(oldContextClassLoader);
     }
+  }
+  
+  void flushProxy(Context namingContext) throws NamingException {
+    this.serviceProxy = namingContext.lookup(jndiName);
   }
 
   void invalidate() {
