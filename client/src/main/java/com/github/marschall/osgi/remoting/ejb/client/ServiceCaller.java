@@ -4,6 +4,8 @@ import static org.osgi.framework.ServiceException.REMOTE;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import javax.naming.Context;
 import javax.naming.NamingException;
@@ -12,7 +14,7 @@ import org.osgi.framework.ServiceException;
 
 class ServiceCaller implements InvocationHandler {
 
-  private volatile Object serviceProxy;
+  private volatile Future<?> serviceProxy;
 
   private final ClassLoader classLoader;
 
@@ -23,7 +25,7 @@ class ServiceCaller implements InvocationHandler {
   private final String jndiName;
 
 
-  ServiceCaller(Object serviceProxy, ClassLoader classLoader, LoggerBridge logger, String jndiName) {
+  ServiceCaller(Future<?> serviceProxy, ClassLoader classLoader, LoggerBridge logger, String jndiName) {
     this.serviceProxy = serviceProxy;
     this.classLoader = classLoader;
     this.logger = logger;
@@ -41,7 +43,7 @@ class ServiceCaller implements InvocationHandler {
       if (!this.valid) {
         throw new IllegalStateException("service is no longer valid");
       }
-      return method.invoke(this.serviceProxy, args);
+      return method.invoke(this.serviceProxy.get(), args);
       // javax.security.sasl.SaslException
     } catch (Throwable /* JBossRemotingException */ t) {
       // TODO service reference
@@ -54,11 +56,46 @@ class ServiceCaller implements InvocationHandler {
   }
   
   void flushProxy(Context namingContext) throws NamingException {
-    this.serviceProxy = namingContext.lookup(jndiName);
+    this.serviceProxy = new CompletedFuture<Object>(namingContext.lookup(jndiName));
   }
 
   void invalidate() {
     this.valid = false;
+  }
+  
+  static final class CompletedFuture<T> implements Future<T> {
+    
+    private final T value;
+    
+    CompletedFuture(T value) {
+      this.value = value;
+    }
+
+    @Override
+    public boolean cancel(boolean mayInterruptIfRunning) {
+      return false;
+    }
+
+    @Override
+    public T get() {
+      return this.value;
+    }
+
+    @Override
+    public T get(long timeout, TimeUnit unit) {
+      return this.value;
+    }
+
+    @Override
+    public boolean isCancelled() {
+      return false;
+    }
+
+    @Override
+    public boolean isDone() {
+      return true;
+    }
+    
   }
 
 }

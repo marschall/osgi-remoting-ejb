@@ -13,8 +13,11 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -44,11 +47,14 @@ final class ProxyService implements BundleListener, ProxyFlusher {
 
   private final InitialContextService initialContextService;
 
+  private final ExecutorService executorService;
 
-  ProxyService(BundleContext bundleContext, LoggerBridge logger, InitialContextService initialContextService) {
+
+  ProxyService(BundleContext bundleContext, LoggerBridge logger, InitialContextService initialContextService, ExecutorService executorService) {
     this.bundleContext = bundleContext;
     this.logger = logger;
     this.initialContextService = initialContextService;
+    this.executorService = executorService;
     this.contexts = new ConcurrentHashMap<Bundle, BundleProxyContext>();
     this.parser = new ServiceXmlParser();
     this.parent = new BundlesProxyClassLoader(this.lookUpParentBundles(bundleContext));
@@ -164,20 +170,11 @@ final class ProxyService implements BundleListener, ProxyFlusher {
     try {
       for (ServiceInfo info : result.services) {
         Class<?> interfaceClazz;
-        Object jBossProxy;
+        Future<?> jBossProxy;
         try {
           interfaceClazz = classLoader.loadClass(info.interfaceName);
-          jBossProxy = this.lookUpJBossProxy(interfaceClazz, info.jndiName, namingContext);
+          jBossProxy = this.lookUpJBossProxy(interfaceClazz, info.jndiName, namingContext, classLoader);
         } catch (ClassNotFoundException e) {
-          this.logger.warning("failed to load interface class: " + info.interfaceName
-              + ", remote service will not be available", e);
-          continue;
-        } catch (NamingException e) {
-          this.logger.warning("failed to look up interface class: " + info.interfaceName
-              + " with JNDI name: " + info.jndiName
-              + ", remote service will not be available", e);
-          continue;
-        } catch (ClassCastException e) {
           this.logger.warning("failed to load interface class: " + info.interfaceName
               + ", remote service will not be available", e);
           continue;
@@ -212,11 +209,39 @@ final class ProxyService implements BundleListener, ProxyFlusher {
     return new BundleProxyClassLoader(bundle, this.parent);
   }
 
-  private Object lookUpJBossProxy(Class<?> interfaceClazz, String jndiName, Context namingContext)
-      throws NamingException, ClassCastException {
-    // TODO needs to go to custom thread for stateful
-    Object proxy = namingContext.lookup(jndiName);
-    return interfaceClazz.cast(proxy);
+  private Future<?> lookUpJBossProxy(Class<?> interfaceClazz, String jndiName, Context namingContext, ClassLoader classLoader) {
+    return this.executorService.submit(new ProxyLookUp(interfaceClazz, jndiName, namingContext, classLoader));
+  }
+  
+  static final class ProxyLookUp implements Callable<Object> {
+    
+    private final Class<?> interfaceClazz;
+    private final String jndiName;
+    private final Context namingContext;
+    private final ClassLoader classLoader;
+
+    ProxyLookUp(Class<?> interfaceClazz, String jndiName, Context namingContext, ClassLoader classLoader) {
+      this.interfaceClazz = interfaceClazz;
+      this.jndiName = jndiName;
+      this.namingContext = namingContext;
+      this.classLoader = classLoader;
+    }
+
+
+
+    @Override
+    public Object call() throws Exception {
+      Thread currentThread = Thread.currentThread();
+      ClassLoader oldContextClassLoader = currentThread.getContextClassLoader();
+      try {
+        currentThread.setContextClassLoader(this.classLoader);
+        Object proxy = namingContext.lookup(jndiName);
+        return this.interfaceClazz.cast(proxy);
+      } finally {
+        currentThread.setContextClassLoader(oldContextClassLoader);
+      }
+    }
+    
   }
 
   private Context createNamingContext() throws NamingException {
