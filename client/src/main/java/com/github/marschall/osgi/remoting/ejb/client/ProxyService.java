@@ -28,9 +28,10 @@ import org.osgi.framework.BundleListener;
 import org.osgi.framework.ServiceRegistration;
 
 import com.github.marschall.osgi.remoting.ejb.api.InitialContextService;
+import com.github.marschall.osgi.remoting.ejb.api.ProxyFlusher;
 
-final class ProxyService implements BundleListener {
-  
+final class ProxyService implements BundleListener, ProxyFlusher {
+
   private final ConcurrentMap<Bundle, BundleProxyContext> contexts;
 
   private final ServiceXmlParser parser;
@@ -143,6 +144,11 @@ final class ProxyService implements BundleListener {
 
   void registerServices(Bundle bundle, ParseResult result) {
     ClassLoader classLoader = createClassLoader(bundle);
+    Thread currentThread = Thread.currentThread();
+    ClassLoader oldContextClassLoader = currentThread.getContextClassLoader();
+    // switch TCCL only once for all the look ups
+    currentThread.setContextClassLoader(classLoader);
+    
     List<ServiceCaller> callers = new ArrayList<ServiceCaller>(result.size());
     List<ServiceRegistration<?>> registrations = new ArrayList<ServiceRegistration<?>>(result.size());
     Context namingContext;
@@ -155,10 +161,6 @@ final class ProxyService implements BundleListener {
       return;
     }
 
-    Thread currentThread = Thread.currentThread();
-    ClassLoader oldContextClassLoader = currentThread.getContextClassLoader();
-    // switch TCCL only once for all the look ups
-    currentThread.setContextClassLoader(classLoader);
     try {
       for (ServiceInfo info : result.services) {
         Class<?> interfaceClazz;
@@ -197,7 +199,7 @@ final class ProxyService implements BundleListener {
       currentThread.setContextClassLoader(oldContextClassLoader);
     }
 
-    BundleProxyContext bundleProxyContext = new BundleProxyContext(namingContext, callers, registrations);
+    BundleProxyContext bundleProxyContext = new BundleProxyContext(namingContext, callers, registrations, classLoader);
     // detect double registration is case of concurrent call by #bundleChanged and #initialBundles
     BundleProxyContext previous = this.contexts.putIfAbsent(bundle, bundleProxyContext);
     if (previous != null) {
@@ -244,18 +246,22 @@ final class ProxyService implements BundleListener {
   public void bundleChanged(BundleEvent event) {
     int eventType = event.getType();
     switch (eventType) {
-    // TODO installed? uninstalled? started? resolved?
-    case BundleEvent.STARTING:
-      this.addPotentialBundle(event.getBundle());
-      break;
-    case BundleEvent.STOPPING:
-      this.removePotentialBundle(event.getBundle());
-      break;
-
+      case BundleEvent.STARTING:
+        this.addPotentialBundle(event.getBundle());
+        break;
+      case BundleEvent.STOPPING:
+        this.removePotentialBundle(event.getBundle());
+        break;
     }
-
   }
-
+  
+  @Override
+  public void flushProxies() {
+    for (BundleProxyContext proxyContext : contexts.values()) {
+      proxyContext.flushProxies();
+    }
+  }
+  
   void stop() {
     for (BundleProxyContext context : this.contexts.values()) {
       try {
@@ -268,6 +274,7 @@ final class ProxyService implements BundleListener {
       }
     }
   }
+  
 
   static final class BundleProxyContext {
 
@@ -277,10 +284,14 @@ final class ProxyService implements BundleListener {
 
     private final Collection<ServiceRegistration<?>> registrations;
 
-    BundleProxyContext(Context namingContext, Collection<ServiceCaller> callers, Collection<ServiceRegistration<?>> registrations) {
+    private final ClassLoader classLoader;
+
+    BundleProxyContext(Context namingContext, Collection<ServiceCaller> callers,
+        Collection<ServiceRegistration<?>> registrations, ClassLoader classLoader) {
       this.namingContext = namingContext;
       this.callers = callers;
       this.registrations = registrations;
+      this.classLoader = classLoader;
     }
 
     void release(BundleContext bundleContext) throws NamingException {
@@ -297,6 +308,10 @@ final class ProxyService implements BundleListener {
       for (ServiceRegistration<?> registration : this.registrations) {
         bundleContext.ungetService(registration.getReference());
       }
+    }
+    
+    void flushProxies() {
+      // TODO
     }
 
     private void invalidateCallers() {
