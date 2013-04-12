@@ -28,6 +28,7 @@ public class JBossInitialContextService implements InitialContextService {
   private static final String[] PARENT_BUNDLE_IDS = {
     "org.jboss.spec.javax.transaction.jboss-transaction-api_1.1_spec",
     "org.jboss.spec.javax.ejb.jboss-ejb-api_3.1_spec",
+    "javax.xml.jaxrpc-api-osgi",
     "org.jboss.logging.jboss-logging"
   };
   private static final Set<String> BUNDLE_IDS;

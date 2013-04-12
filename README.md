@@ -1,6 +1,6 @@
-OSGi Remoting EJB
+OSGi Remoting EJB [![Build Status](https://travis-ci.org/marschall/osgi-remoting-ejb.png?branch=master)](https://travis-ci.org/marschall/osgi-remoting-ejb)
 =================
-OSGi Remoting over EJB remoting [![Build Status](https://travis-ci.org/marschall/osgi-remoting-ejb.png?branch=master)](https://travis-ci.org/marschall/osgi-remoting-ejb)
+OSGi Remoting over EJB remoting
 
 The purpose if this project is to allow you to call remote EJBs from within any OSGi container. The EJBs will be presented to you as (remote) OSGi services.
 
@@ -45,11 +45,26 @@ Generic Client
 --------------
 Needs to be started somehow (eg. autostart).
 
+Sample Client
+-------------
+Make sure you deploy org.eclipse.equinox.ds
+
 Adding a new Client Library
 ---------------------------
 * have all reqired client libraries available as OSGi bundles (can be done through wrapping)
 * implement com.github.marschall.osgi.remoting.ejb.api.InitialContextService
 * make sure osgi-remoting-ejb-client is started (eg. Dynamic Services / Service Component Runtime)
+
+JBoss
+-----
+To make the JBoss client libraries work optimal you need to add the following argument. This is independent of this project.
+
+* add the following VM argument `-Dorg.osgi.framework.system.packages.extra=sun.nio.ch,sun.refelect`
+* deploy the following bundles:
+ * org.jboss.spec.javax.transaction.jboss-transaction-api_1.1_spec
+ * org.jboss.spec.javax.ejb.jboss-ejb-api_3.1_spec
+ * javax.xml.jaxrpc-api-osgi
+ * org.jboss.logging.jboss-logging
 
 EJB Client Bundles
 -------------------
