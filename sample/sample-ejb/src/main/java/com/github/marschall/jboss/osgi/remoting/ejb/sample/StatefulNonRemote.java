@@ -1,4 +1,4 @@
-package com.github.marschall.jboss.osgi.remoting;
+package com.github.marschall.jboss.osgi.remoting.ejb.sample;
 
 public interface StatefulNonRemote {
 

@@ -1,7 +1,6 @@
-package com.github.marschall.jboss.osgi.remoting;
+package com.github.marschall.jboss.osgi.remoting.ejb.sample;
 
 import javax.ejb.Remote;
-import javax.ejb.Stateless;
 
 @Remote
 public interface StatelessRemote2 {
