@@ -28,6 +28,7 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleEvent;
 import org.osgi.framework.BundleListener;
+import org.osgi.framework.ServiceException;
 import org.osgi.framework.ServiceRegistration;
 
 import com.github.marschall.osgi.remoting.ejb.api.InitialContextService;
@@ -59,16 +60,16 @@ final class ProxyService implements BundleListener, ProxyFlusher {
     this.contexts = new ConcurrentHashMap<Bundle, BundleProxyContext>();
     this.parser = new ServiceXmlParser();
   }
-  
+
   void setInitialContextService(InitialContextService initialContextService) {
     this.initialContextService = initialContextService;
     this.parent = new BundlesProxyClassLoader(this.lookUpParentBundles());
-    
+
     this.bundleContext.addBundleListener(this);
 
     Bundle[] bundles = this.bundleContext.getBundles();
     this.initialBundles(bundles);
-    
+
     this.flusherRegisterService = this.bundleContext.registerService(ProxyFlusher.class, this, new Hashtable<String, Object>());
   }
 
@@ -81,6 +82,9 @@ final class ProxyService implements BundleListener, ProxyFlusher {
         // TODO check version
         found.put(symbolicName, bundle);
       }
+    }
+    if (found.size() != symbolicNames.size()) {
+      throw new ServiceException("not all client bundles found");
     }
     // TODO sort?
     return found.values();
@@ -283,12 +287,12 @@ final class ProxyService implements BundleListener, ProxyFlusher {
     }
     this.flusherRegisterService.unregister();
     this.flusherRegisterService = null;
-    
+
     this.bundleContext.removeBundleListener(this);
   }
 
   static final class ProxyLookUp implements Callable<Object> {
-    
+
     private final Class<?> interfaceClazz;
     private final String jndiName;
     private final Context namingContext;
@@ -307,13 +311,19 @@ final class ProxyService implements BundleListener, ProxyFlusher {
       ClassLoader oldContextClassLoader = currentThread.getContextClassLoader();
       try {
         currentThread.setContextClassLoader(this.classLoader);
-        Object proxy = namingContext.lookup(jndiName);
-        return this.interfaceClazz.cast(proxy);
+        Object proxy;
+        try {
+          proxy = namingContext.lookup(jndiName);
+          return this.interfaceClazz.cast(proxy);
+        } catch (NamingException e) {
+          System.err.println(e);
+          throw e;
+        }
       } finally {
         currentThread.setContextClassLoader(oldContextClassLoader);
       }
     }
-    
+
   }
 
   static final class BundleProxyContext {
