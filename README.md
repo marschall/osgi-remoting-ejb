@@ -2,7 +2,7 @@ OSGi Remoting EJB [![Build Status](https://travis-ci.org/marschall/osgi-remoting
 =================
 OSGi Remoting over EJB remoting
 
-The purpose if this project is to allow you to call remote EJBs from within any OSGi container. The EJBs will be presented to you as (remote) OSGi services.
+The purpose if this project is to allow you to call remote EJBs from within any OSGi container. The EJBs will be presented to you as (remote) OSGi services. This project does not implement any remoting protocol instead it delegates to the corresponding, vendor dependent EJB client library.
 
 Contents
 --------

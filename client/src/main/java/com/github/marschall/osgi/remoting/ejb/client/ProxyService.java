@@ -170,16 +170,16 @@ final class ProxyService implements BundleListener, ProxyFlusher {
     try {
       for (ServiceInfo info : result.services) {
         Class<?> interfaceClazz;
-        Future<?> jBossProxy;
+        Future<?> serviceProxy;
         try {
           interfaceClazz = classLoader.loadClass(info.interfaceName);
-          jBossProxy = this.lookUpJBossProxy(interfaceClazz, info.jndiName, namingContext, classLoader);
+          serviceProxy = this.lookUpServiceProxy(interfaceClazz, info.jndiName, namingContext, classLoader);
         } catch (ClassNotFoundException e) {
           this.logger.warning("failed to load interface class: " + info.interfaceName
               + ", remote service will not be available", e);
           continue;
         }
-        ServiceCaller serviceCaller = new ServiceCaller(jBossProxy, classLoader, this.logger, info.jndiName);
+        ServiceCaller serviceCaller = new ServiceCaller(serviceProxy, classLoader, this.logger, info.jndiName);
         Object service = Proxy.newProxyInstance(classLoader, new Class[]{interfaceClazz}, serviceCaller);
         callers.add(serviceCaller);
         // TODO properties
@@ -209,39 +209,8 @@ final class ProxyService implements BundleListener, ProxyFlusher {
     return new BundleProxyClassLoader(bundle, this.parent);
   }
 
-  private Future<?> lookUpJBossProxy(Class<?> interfaceClazz, String jndiName, Context namingContext, ClassLoader classLoader) {
+  private Future<?> lookUpServiceProxy(Class<?> interfaceClazz, String jndiName, Context namingContext, ClassLoader classLoader) {
     return this.executorService.submit(new ProxyLookUp(interfaceClazz, jndiName, namingContext, classLoader));
-  }
-  
-  static final class ProxyLookUp implements Callable<Object> {
-    
-    private final Class<?> interfaceClazz;
-    private final String jndiName;
-    private final Context namingContext;
-    private final ClassLoader classLoader;
-
-    ProxyLookUp(Class<?> interfaceClazz, String jndiName, Context namingContext, ClassLoader classLoader) {
-      this.interfaceClazz = interfaceClazz;
-      this.jndiName = jndiName;
-      this.namingContext = namingContext;
-      this.classLoader = classLoader;
-    }
-
-
-
-    @Override
-    public Object call() throws Exception {
-      Thread currentThread = Thread.currentThread();
-      ClassLoader oldContextClassLoader = currentThread.getContextClassLoader();
-      try {
-        currentThread.setContextClassLoader(this.classLoader);
-        Object proxy = namingContext.lookup(jndiName);
-        return this.interfaceClazz.cast(proxy);
-      } finally {
-        currentThread.setContextClassLoader(oldContextClassLoader);
-      }
-    }
-    
   }
 
   private Context createNamingContext() throws NamingException {
@@ -310,6 +279,34 @@ final class ProxyService implements BundleListener, ProxyFlusher {
     }
   }
 
+  static final class ProxyLookUp implements Callable<Object> {
+    
+    private final Class<?> interfaceClazz;
+    private final String jndiName;
+    private final Context namingContext;
+    private final ClassLoader classLoader;
+
+    ProxyLookUp(Class<?> interfaceClazz, String jndiName, Context namingContext, ClassLoader classLoader) {
+      this.interfaceClazz = interfaceClazz;
+      this.jndiName = jndiName;
+      this.namingContext = namingContext;
+      this.classLoader = classLoader;
+    }
+
+    @Override
+    public Object call() throws Exception {
+      Thread currentThread = Thread.currentThread();
+      ClassLoader oldContextClassLoader = currentThread.getContextClassLoader();
+      try {
+        currentThread.setContextClassLoader(this.classLoader);
+        Object proxy = namingContext.lookup(jndiName);
+        return this.interfaceClazz.cast(proxy);
+      } finally {
+        currentThread.setContextClassLoader(oldContextClassLoader);
+      }
+    }
+    
+  }
 
   static final class BundleProxyContext {
 

@@ -45,7 +45,7 @@ class ServiceCaller implements InvocationHandler {
       }
       return method.invoke(this.serviceProxy.get(), args);
       // javax.security.sasl.SaslException
-    } catch (Throwable /* JBossRemotingException */ t) {
+    } catch (Throwable t) {
       // TODO service reference
       String message = "service call " + method.getDeclaringClass().getName() + "#" + method.getName() + "() failed";
       this.logger.error(message, t);
