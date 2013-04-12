@@ -25,18 +25,19 @@ public class Activator implements BundleActivator {
   public void start(BundleContext context) throws Exception {
     this.serviceReferences = new LinkedBlockingQueue<ServiceReference<?>>();
     filter = context.createFilter("(service.imported=*)");
+    StatelessRemote1.class.getName();
     
-    StatelessRemote1 statelessRemote1 = this.lookup(context, StatelessRemote1.class);
-    System.out.println(statelessRemote1.statelessRemote1());
-    
-    StatelessRemote2 statelessRemote2 = this.lookup(context, StatelessRemote2.class);
-    System.out.println(statelessRemote2.statelessRemote2());
-    
-    StatefulRemote1 statefulRemote1 = this.lookup(context, StatefulRemote1.class);
-    System.out.println(statefulRemote1.statefulRemote1());
-    
-    StatefulRemote2 statefulRemote2 = this.lookup(context, StatefulRemote2.class);
-    System.out.println(statefulRemote2.statefulRemote2());
+//    StatelessRemote1 statelessRemote1 = this.lookup(context, StatelessRemote1.class);
+//    System.out.println(statelessRemote1.statelessRemote1());
+//    
+//    StatelessRemote2 statelessRemote2 = this.lookup(context, StatelessRemote2.class);
+//    System.out.println(statelessRemote2.statelessRemote2());
+//    
+//    StatefulRemote1 statefulRemote1 = this.lookup(context, StatefulRemote1.class);
+//    System.out.println(statefulRemote1.statefulRemote1());
+//    
+//    StatefulRemote2 statefulRemote2 = this.lookup(context, StatefulRemote2.class);
+//    System.out.println(statefulRemote2.statefulRemote2());
   }
   
   private <T> T lookup(BundleContext context, Class<T> clazz) throws InvalidSyntaxException {

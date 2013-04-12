@@ -43,24 +43,36 @@ final class ProxyService implements BundleListener, ProxyFlusher {
 
   private final LoggerBridge logger;
 
-  private final ClassLoader parent;
+  private volatile ClassLoader parent;
 
-  private final InitialContextService initialContextService;
+  private volatile InitialContextService initialContextService;
 
   private final ExecutorService executorService;
 
+  private volatile ServiceRegistration<ProxyFlusher> flusherRegisterService;
 
-  ProxyService(BundleContext bundleContext, LoggerBridge logger, InitialContextService initialContextService, ExecutorService executorService) {
+
+  ProxyService(BundleContext bundleContext, LoggerBridge logger, ExecutorService executorService) {
     this.bundleContext = bundleContext;
     this.logger = logger;
-    this.initialContextService = initialContextService;
     this.executorService = executorService;
     this.contexts = new ConcurrentHashMap<Bundle, BundleProxyContext>();
     this.parser = new ServiceXmlParser();
-    this.parent = new BundlesProxyClassLoader(this.lookUpParentBundles(bundleContext));
+  }
+  
+  void setInitialContextService(InitialContextService initialContextService) {
+    this.initialContextService = initialContextService;
+    this.parent = new BundlesProxyClassLoader(this.lookUpParentBundles());
+    
+    this.bundleContext.addBundleListener(this);
+
+    Bundle[] bundles = this.bundleContext.getBundles();
+    this.initialBundles(bundles);
+    
+    this.flusherRegisterService = this.bundleContext.registerService(ProxyFlusher.class, this, new Hashtable<String, Object>());
   }
 
-  private Collection<Bundle> lookUpParentBundles(BundleContext bundleContext) {
+  private Collection<Bundle> lookUpParentBundles() {
     Set<String> symbolicNames = this.initialContextService.getClientBundleSymbolicNames();
     Map<String, Bundle> found = new HashMap<String, Bundle>(symbolicNames.size());
     for (Bundle bundle : bundleContext.getBundles()) {
@@ -78,7 +90,7 @@ final class ProxyService implements BundleListener, ProxyFlusher {
   void initialBundles(Bundle[] bundles) {
     for (Bundle bundle : bundles) {
       int bundleState = bundle.getState();
-      if (bundleState == BundleEvent.STARTING || bundleState == BundleEvent.STARTED) {
+      if (bundleState == Bundle.STARTING || bundleState == Bundle.ACTIVE) {
         this.addPotentialBundle(bundle);
       }
     }
@@ -98,20 +110,12 @@ final class ProxyService implements BundleListener, ProxyFlusher {
 
   private List<URL> getServiceUrls(Bundle bundle) {
     String resourceLocation = this.getResourceLocation(bundle);
-    Enumeration<URL> resources;
-    try {
-      resources = bundle.getResources(resourceLocation);
-    } catch (IOException e) {
-      this.logger.warning("failed to access location '" + resourceLocation + "' in bundle: " + bundle);
-      return Collections.emptyList();
-    }
+    Enumeration<URL> resources = bundle.findEntries(resourceLocation, "*.xml", false);
     if (resources != null && resources.hasMoreElements()) {
       List<URL> serviceXmls = new ArrayList<URL>(1);
       while (resources.hasMoreElements()) {
         URL nextElement = resources.nextElement();
-        if (nextElement.getFile().endsWith(".xml")) {
-          serviceXmls.add(nextElement);
-        }
+        serviceXmls.add(nextElement);
       }
       return serviceXmls;
     } else {
@@ -277,6 +281,10 @@ final class ProxyService implements BundleListener, ProxyFlusher {
         this.logger.warning("could not unregister service", e);
       }
     }
+    this.flusherRegisterService.unregister();
+    this.flusherRegisterService = null;
+    
+    this.bundleContext.removeBundleListener(this);
   }
 
   static final class ProxyLookUp implements Callable<Object> {

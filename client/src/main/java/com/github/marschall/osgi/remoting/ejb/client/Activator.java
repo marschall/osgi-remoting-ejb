@@ -1,61 +1,81 @@
 package com.github.marschall.osgi.remoting.ejb.client;
 
-import java.util.Hashtable;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
-import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceException;
-import org.osgi.framework.ServiceReference;
-import org.osgi.framework.ServiceRegistration;
+import org.osgi.util.tracker.ServiceTracker;
 
 import com.github.marschall.osgi.remoting.ejb.api.InitialContextService;
-import com.github.marschall.osgi.remoting.ejb.api.ProxyFlusher;
 
 public class Activator implements BundleActivator {
 
   private volatile ProxyService proxyService;
   private volatile LoggerBridge logger;
-  private volatile ServiceReference<InitialContextService> initialContextServiceReference;
-  private volatile ServiceRegistration<ProxyFlusher> flusherRegisterService;
-  private volatile ScheduledExecutorService executor;
+  private volatile ServiceTracker<InitialContextService, InitialContextService> initialContextServiceTracker;
+  private volatile ExecutorService executor;
+  private volatile boolean stopped;
 
   @Override
   public void start(BundleContext context) throws Exception {
+    this.stopped = false;
     this.logger = new LoggerBridge(context);
-    this.initialContextServiceReference = context.getServiceReference(InitialContextService.class);
-    if (initialContextServiceReference == null) {
-      throw new ServiceException("missing initial context servie");
+    this.executor = Executors.newSingleThreadExecutor(new LookUpThreadFactory());
+    
+    this.initialContextServiceTracker = new ServiceTracker<InitialContextService, InitialContextService>(context, InitialContextService.class, null);
+    
+    // this will trigger the loading of the InitialContextService service implementation
+    // however loading can only start once this bundle has been activated
+    // therefore we need to move the waiting to a different thread
+    this.initialContextServiceTracker.open();
+    
+    this.executor.submit(new WaitForInitialContextService());
+    
+    this.proxyService = new ProxyService(context, this.logger, this.executor);
+  }
+  
+  final class WaitForInitialContextService implements Runnable {
+
+    @Override
+    public void run() {
+      ExecutorService e = executor;
+      ServiceTracker<InitialContextService, InitialContextService> t = initialContextServiceTracker;
+      if (e != null && t != null && !stopped) {
+        InitialContextService initialContextService = t.getService();
+        if (initialContextService == null) {
+          try {
+            initialContextService = t.waitForService(TimeUnit.SECONDS.toMillis(1L));
+          } catch (InterruptedException e1) {
+            Thread.currentThread().interrupt();
+          }
+        }
+        if (initialContextService != null) {
+          ProxyService s = proxyService;
+          if (s != null) {
+            s.setInitialContextService(initialContextService);
+          }
+        } else {
+          e.submit(this);
+        }
+      }
     }
     
-    this.executor = Executors.newSingleThreadScheduledExecutor(new LookUpThreadFactory());
-    
-    InitialContextService initialContextService = context.getService(this.initialContextServiceReference);
-    this.proxyService = new ProxyService(context, this.logger, initialContextService, this.executor);
-    context.addBundleListener(this.proxyService);
-
-    Bundle[] bundles = context.getBundles();
-    this.proxyService.initialBundles(bundles);
-    
-    this.flusherRegisterService = context.registerService(ProxyFlusher.class, this.proxyService, new Hashtable<String, Object>());
   }
 
   @Override
   public void stop(BundleContext context) throws Exception {
-    context.removeBundleListener(this.proxyService);
+    this.stopped = true;
     this.proxyService.stop();
     this.logger.stop();
-    context.ungetService(this.initialContextServiceReference);
-    this.flusherRegisterService.unregister();
+    this.initialContextServiceTracker.close();
     this.executor.shutdownNow();
 
     this.proxyService = null;
     this.logger = null;
-    this.initialContextServiceReference = null;
-    this.flusherRegisterService = null;
+    this.initialContextServiceTracker = null;
     this.executor = null;
   }
   
