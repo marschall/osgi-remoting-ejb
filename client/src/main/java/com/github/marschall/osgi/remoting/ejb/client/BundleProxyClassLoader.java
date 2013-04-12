@@ -1,6 +1,8 @@
 package com.github.marschall.osgi.remoting.ejb.client;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.Enumeration;
 
@@ -9,6 +11,23 @@ import org.osgi.framework.Bundle;
 // http://wiki.eclipse.org/BundleProxyClassLoader_recipe
 // http://wiki.eclipse.org/index.php/Context_Class_Loader_Enhancements
 final class BundleProxyClassLoader extends ClassLoader {
+  
+  static {
+    // try to call registerAsParallelCapable
+    try {
+      Method registerAsParallelCapable = ClassLoader.class.getDeclaredMethod("registerAsParallelCapable");
+      registerAsParallelCapable.setAccessible(true);
+      registerAsParallelCapable.invoke(null);
+    } catch (SecurityException e) {
+      // ignore, no permissions
+    } catch (IllegalAccessException e) {
+      // shouldn't happen
+    } catch (InvocationTargetException e) {
+      // shouldn't happen
+    } catch (NoSuchMethodException e) {
+      // ignore, on 1.7
+    }
+  }
 
   private final Bundle bundle;
 

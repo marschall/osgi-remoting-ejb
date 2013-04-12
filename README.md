@@ -27,6 +27,15 @@ Cons
 Authentication
 --------------
 
+Lazy Login
+----------
+* make unauthenticated class
+* authenticate through client library (through proprietary API)
+* look up com.github.marschall.osgi.remoting.ejb.api.ProxyFlusher
+* call com.github.marschall.osgi.remoting.ejb.api.ProxyFlusher
+* wait for method call to return
+* no need to re-lookup OSGi services
+
 Design Decisions
 ----------------
 InitialContext per bundle
@@ -34,6 +43,12 @@ InitialContext per bundle
 Generic Client
 --------------
 Needs to be started somehow (eg. autostart).
+
+Adding a new Client Library
+---------------------------
+* have all reqired client libraries available as OSGi bundles (can be done through wrapping)
+* implement com.github.marschall.osgi.remoting.ejb.api.InitialContextService
+* make sure osgi-remoting-ejb-client is started (eg. Dynamic Services / Service Component Runtime)
 
 EJB Client Bundles
 -------------------

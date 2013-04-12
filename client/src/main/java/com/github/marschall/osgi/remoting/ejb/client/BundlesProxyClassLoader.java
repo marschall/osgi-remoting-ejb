@@ -13,7 +13,6 @@ import org.osgi.framework.Bundle;
 
 final class BundlesProxyClassLoader extends ClassLoader {
 
-
   static {
     // try to call registerAsParallelCapable
     try {
@@ -30,7 +29,6 @@ final class BundlesProxyClassLoader extends ClassLoader {
       // ignore, on 1.7
     }
   }
-
 
   private final Collection<Bundle> bundles;
 
