@@ -72,9 +72,8 @@
           <instructions>
             <Import-Package>
               org.osgi.framework;version="[1.0.0,2.0.0)",
-              org.osgi.util.tracker,
+              org.osgi.util.tracker;version="[1.1.0,2.0.0)",
               org.osgi.service.log;resolution:=optional,
-              org.osgi.service.remoteserviceadmin;version="[1.0.0,2.0.0)";resolution:=optional,
               javax.xml.stream,
               com.github.marschall.osgi.remoting.ejb.api;version="[${project.version},${project.version}]",
               javax.naming

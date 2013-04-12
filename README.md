@@ -66,6 +66,7 @@ To make the JBoss client libraries work optimal you need to add the following ar
  * org.jboss.spec.javax.ejb.jboss-ejb-api_3.1_spec
  * javax.xml.jaxrpc-api-osgi
  * org.jboss.logging.jboss-logging
+* client library has to be deployed unpacked
 
 EJB Client Bundles
 -------------------

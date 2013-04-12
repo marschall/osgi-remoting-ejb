@@ -193,7 +193,7 @@ final class ProxyService implements BundleListener, ProxyFlusher {
         Dictionary<String, Object> properties = new Hashtable<String, Object>();
         properties.put("service.imported", true);
         properties.put("com.github.marschall.osgi.remoting.ejb.jndiName", info.jndiName);
-        ServiceRegistration<?> serviceRegistration = this.bundleContext.registerService(info.interfaceName, service, properties);
+        ServiceRegistration<?> serviceRegistration = this.bundleContext.registerService((Class<Object>) interfaceClass, service, properties);
         registrations.add(serviceRegistration);
       }
     } finally {

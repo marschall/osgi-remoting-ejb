@@ -41,7 +41,8 @@
           <instructions>
             <Import-Package>
               com.github.marschall.jboss.osgi.remoting.ejb.sample;-split-package:=error,
-              org.osgi.framework;version="[1.6,2.0)"
+              org.osgi.framework;version="[1.6,2.0)",
+              org.osgi.util.tracker;version="[1.1,2.0)"
             </Import-Package>
             <Bundle-SymbolicName>${project.groupId}.${project.artifactId};singleton:=true</Bundle-SymbolicName>
             <Bundle-ActivationPolicy>lazy</Bundle-ActivationPolicy>
