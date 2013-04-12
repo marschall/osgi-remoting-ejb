@@ -322,5 +322,4 @@ final class ProxyService implements BundleListener, ProxyFlusher {
 
   }
 
-
 }
