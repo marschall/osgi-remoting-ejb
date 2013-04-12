@@ -316,6 +316,7 @@ final class ProxyService implements BundleListener, ProxyFlusher {
           proxy = namingContext.lookup(jndiName);
           return this.interfaceClazz.cast(proxy);
         } catch (NamingException e) {
+          // FIXME
           System.err.println(e);
           throw e;
         }

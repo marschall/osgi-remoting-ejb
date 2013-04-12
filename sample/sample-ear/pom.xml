@@ -10,7 +10,7 @@
 
   <artifactId>osgi-remoting-ejb-sample-ear</artifactId>
   <packaging>ear</packaging>
-  
+
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
@@ -19,7 +19,7 @@
       <type>ejb</type>
     </dependency>
   </dependencies>
-  
+
   <build>
     <plugins>
       <plugin>
@@ -27,6 +27,11 @@
         <configuration>
           <applicationName>${project.artifactId}</applicationName>
           <version>6</version>
+          <fileNameMapping>no-version-for-ejb</fileNameMapping>
+          <defaultLibBundleDir>lib/</defaultLibBundleDir>
+          <archive>
+            <index>true</index>
+          </archive>
         </configuration>
       </plugin>
     </plugins>
