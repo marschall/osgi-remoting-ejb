@@ -7,6 +7,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
 import org.osgi.util.tracker.ServiceTracker;
 
 import com.github.marschall.osgi.remoting.ejb.api.InitialContextService;
@@ -15,26 +16,24 @@ public class Activator implements BundleActivator {
 
   private volatile ProxyService proxyService;
   private volatile LoggerBridge logger;
-  private volatile ServiceTracker<InitialContextService, InitialContextService> initialContextServiceTracker;
+  private volatile ServiceReference<InitialContextService> initialContextService;
   private volatile ExecutorService executor;
   private volatile boolean stopped;
+  private volatile BundleContext context;
 
   @Override
   public void start(BundleContext context) throws Exception {
+    this.context = context;
     this.stopped = false;
     this.logger = new LoggerBridge(context);
     this.executor = Executors.newSingleThreadExecutor(new LookUpThreadFactory());
     
-    this.initialContextServiceTracker = new ServiceTracker<InitialContextService, InitialContextService>(context, InitialContextService.class, null);
+    this.proxyService = new ProxyService(context, this.logger, this.executor);
     
     // this will trigger the loading of the InitialContextService service implementation
     // however loading can only start once this bundle has been activated
     // therefore we need to move the waiting to a different thread
-    this.initialContextServiceTracker.open();
-    
     this.executor.submit(new WaitForInitialContextService());
-    
-    this.proxyService = new ProxyService(context, this.logger, this.executor);
   }
   
   final class WaitForInitialContextService implements Runnable {
@@ -42,23 +41,24 @@ public class Activator implements BundleActivator {
     @Override
     public void run() {
       ExecutorService e = executor;
-      ServiceTracker<InitialContextService, InitialContextService> t = initialContextServiceTracker;
-      if (e != null && t != null && !stopped) {
-        InitialContextService initialContextService = t.getService();
-        if (initialContextService == null) {
+      BundleContext c = context;
+      if (e != null && c != null && !stopped) {
+        ServiceReference<InitialContextService> s = c.getServiceReference(InitialContextService.class);
+        if (s != null) {
+          ProxyService p = proxyService;
+          if (p != null) {
+            // TODO potential race with #close
+            initialContextService = s;
+            p.setInitialContextService(c.getService(s));
+          }
+        } else {
           try {
-            initialContextService = t.waitForService(TimeUnit.SECONDS.toMillis(1L));
+            // TODO schedule
+            Thread.sleep(TimeUnit.SECONDS.toMillis(1L));
+            e.submit(this);
           } catch (InterruptedException e1) {
             Thread.currentThread().interrupt();
           }
-        }
-        if (initialContextService != null) {
-          ProxyService s = proxyService;
-          if (s != null) {
-            s.setInitialContextService(initialContextService);
-          }
-        } else {
-          e.submit(this);
         }
       }
     }
@@ -70,12 +70,14 @@ public class Activator implements BundleActivator {
     this.stopped = true;
     this.proxyService.stop();
     this.logger.stop();
-    this.initialContextServiceTracker.close();
+    if (initialContextService != null) {
+      context.ungetService(initialContextService);
+    }
     this.executor.shutdownNow();
 
     this.proxyService = null;
     this.logger = null;
-    this.initialContextServiceTracker = null;
+    this.initialContextService = null;
     this.executor = null;
   }
   
