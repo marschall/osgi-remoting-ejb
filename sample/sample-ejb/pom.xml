@@ -58,6 +58,9 @@
         <artifactId>maven-bundle-plugin</artifactId>
         <extensions>true</extensions>
         <configuration>
+          <supportedProjectTypes>
+            <supportedProjectType>ejb</supportedProjectType>
+          </supportedProjectTypes>
           <instructions>
             <Export-Package>
               ${project.groupId}.*;version=${project.version};-split-package:=error;-noimport:=true
