@@ -2,7 +2,7 @@ OSGi Remoting EJB [![Build Status](https://travis-ci.org/marschall/osgi-remoting
 =================
 OSGi Remoting over EJB remoting
 
-The purpose if this project is to allow you to call remote EJBs from within any OSGi container. The EJBs will be presented to you as (remote) OSGi services. This project does not implement any remoting protocol instead it delegates to the corresponding, vendor dependent EJB client library.
+The purpose if this project is allowing to call remote EJBs from within any OSGi container. The EJBs will be presented as (remote) OSGi services. This project does not implement any remoting protocol instead it delegates to the corresponding, vendor dependent EJB client library.
 
 At it's core the what this project does it sets the thread context classloader (TCCL) to an appropriate classloader during
 * `new InitialContext()`
@@ -23,20 +23,25 @@ In addition the ejb-client JARs have to be OSGi bundles with correct dependencie
 
 Contents
 --------
-* client magic
-* annotation processor
-* sample EJB and EAR
-* sample glue code for JBoss and Glassfish
+This project includes the following components:
+* the core, sever independent library that switches the TCCL and registers the OSGi services
+* a Java 6 annotation processor processor that generates the required service.xml files for the ejb-client JARs
+* sample integration for JBoss
+* a sample JBoss EJB client library bundle
+* a sample EJB
+* a sample EAR
+* a sample client
 
+It's important that the provided JBoss integration is just a sample and can be replaced by one that fits custom needs.
 
 Pros
 ----
-The advantages of this project are
+The advantages of this project are:
 * supports dynamic starting and stopping of EJB client bundles at run time
 * with little effort support every EJB client library that uses the thread context class loader can be supported
 * the look up of service proxies (can involve network access) is in its own thread to reduce impact on framework start up
 
-In addition the following "OSGi smells" are avoided
+In addition the following "OSGi smells" are avoided:
 * [buddy class loading](http://wiki.eclipse.org/Context_Class_Loader_Enhancements#Buddy_Class_Loading)
 * [DynamicImport-Package](http://wiki.osgi.org/wiki/DynamicImport-Package)
 * dependencies from the ejb-client JARs to the EJB client library
@@ -44,20 +49,21 @@ In addition the following "OSGi smells" are avoided
 
 Cons
 ----
-* only one EJB provider
-* no dynamic discovery
+Only one EJB client library is supported at runtime, starting, stopping and restarting this library is not supported.
 
 Authentication
 --------------
+There is not API for doing authentication as it's not covered by OSGi Remoting. Authentication has to be done through the proprietary EJB client library API.
 
 Lazy Login
 ----------
-* make unauthenticated class
-* authenticate through client library (through proprietary API)
-* look up com.github.marschall.osgi.remoting.ejb.api.ProxyFlusher
-* call com.github.marschall.osgi.remoting.ejb.api.ProxyFlusher
+There is support for starting with unauthenticated calls first, then login in and from then on performing only authenticated calls. The following steps have to be taken
+* make unauthenticated calls
+* authenticate through client library (through proprietary EJB client library API)
+* look up `com.github.marschall.osgi.remoting.ejb.api.ProxyFlusher`
+* call `com.github.marschall.osgi.remoting.ejb.api.ProxyFlusher#flushProxies()`
 * wait for method call to return
-* no need to re-lookup OSGi services
+* no need to re-lookup OSGi services, they stay valid and use authenticated calls not
 
 Design Decisions/Trade Offs
 ---------------------------
