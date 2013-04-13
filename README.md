@@ -82,9 +82,8 @@ Adding a new Client Library
 
 JBoss
 -----
-To make the JBoss client libraries work optimal you need to add the following argument. This is independent of this project.
-
-* add the following VM argument `-Dorg.osgi.framework.system.packages.extra=sun.nio.ch,sun.refelect`
+To make the JBoss client libraries provided with this project work the following steps have to be taken:
+* add the following VM argument `-Dorg.osgi.framework.system.packages.extra=sun.nio.ch,sun.refelect`, this is independent of this project
 * deploy the following bundles:
  * org.jboss.spec.javax.transaction.jboss-transaction-api_1.1_spec
  * org.jboss.spec.javax.ejb.jboss-ejb-api_3.1_spec
@@ -103,3 +102,8 @@ ejb-client JARs
 * have to OSGi bundles with their (direct) dependencies specified through `Require-Bundle` or `Import-Package` but no dependencies on EJB client libraries
 * when running in Equinox need to have the following bundle header `Bundle-ActivationPolicy: lazy`
 * have to have an OSGi remote service XML in `OSGI-INF/remote-service` or a different location specified through the `Remote-Service` bundle header. The easiest way to do this is through the included annotation processor.
+
+Open Issues
+-----------
+JBoss client library is twice the size it needs to be.
+
