@@ -4,17 +4,10 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>com.github.marschall</groupId>
-    <artifactId>osgi-remoting-ejb-parent</artifactId>
+    <artifactId>osgi-remoting-ejb-processor</artifactId>
     <version>0.0.1-SNAPSHOT</version>
   </parent>
 
-  <artifactId>osgi-remoting-ejb-processor</artifactId>
-  <packaging>pom</packaging>
-
-  <modules>
-    <module>processor-core</module>
-    <module>processor6</module>
-    <module>processor7</module>
-  </modules>
+  <artifactId>osgi-remoting-ejb-processor-core</artifactId>
 
 </project>

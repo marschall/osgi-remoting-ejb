@@ -1,6 +1,5 @@
 package com.github.marschall.osgi.remoting.ejb.processor;
 
-import static javax.lang.model.SourceVersion.RELEASE_6;
 import static javax.tools.Diagnostic.Kind.ERROR;
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
 
@@ -15,27 +14,13 @@ import javax.annotation.processing.Filer;
 import javax.annotation.processing.Messager;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
-import javax.annotation.processing.SupportedAnnotationTypes;
-import javax.annotation.processing.SupportedOptions;
-import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.element.TypeElement;
 import javax.tools.FileObject;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
-@SupportedOptions({
-  "javax.ejb.module.name",
-  "javax.ejb.application.name",
-  "org.jboss.distinct.name",
-})
-@SupportedSourceVersion(RELEASE_6)
-@SupportedAnnotationTypes({
-  "javax.ejb.Stateful",
-  "javax.ejb.Stateless",
-  "javax.ejb.Singleton"
-})
-public class ServiceXmlGenerator extends AbstractProcessor {
+public abstract class ServiceXmlGenerator extends AbstractProcessor {
 
   private static final String FILE_NAME = "ejb-client.xml";
   static final String MODULE_NAME_OPTION = "javax.ejb.module.name";

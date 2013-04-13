@@ -19,7 +19,7 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>osgi-remoting-ejb-processor</artifactId>
+      <artifactId>osgi-remoting-ejb-processor6</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
