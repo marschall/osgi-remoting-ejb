@@ -49,9 +49,22 @@
           <compilerArguments>
             <Ajavax.ejb.module.name>${project.artifactId}</Ajavax.ejb.module.name>
             <Ajavax.ejb.application.name>osgi-remoting-ejb-sample-ear</Ajavax.ejb.application.name>
+            <!-- trigger the generation of JBoss EJB URLs -->
             <Aorg.jboss.distinct.name></Aorg.jboss.distinct.name>
           </compilerArguments>
         </configuration>
+      </plugin>
+      <plugin>
+          <groupId>org.jboss.jandex</groupId>
+          <artifactId>jandex-maven-plugin</artifactId>
+          <executions>
+              <execution>
+                  <id>make-index</id>
+                  <goals>
+                      <goal>jandex</goal>
+                  </goals>
+              </execution>
+          </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.felix</groupId>
@@ -102,6 +115,19 @@
                     <versionRange>[2.3.7,)</versionRange>
                     <goals>
                       <goal>manifest</goal>
+                    </goals>
+                  </pluginExecutionFilter>
+                  <action>
+                    <ignore></ignore>
+                  </action>
+                </pluginExecution>
+                <pluginExecution>
+                  <pluginExecutionFilter>
+                    <groupId>org.jboss.jandex</groupId>
+                    <artifactId>jandex-maven-plugin</artifactId>
+                    <versionRange>[1.0.1,)</versionRange>
+                    <goals>
+                      <goal>jandex</goal>
                     </goals>
                   </pluginExecutionFilter>
                   <action>
