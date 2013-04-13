@@ -84,6 +84,7 @@ final class ProxyService implements BundleListener, ProxyFlusher {
       }
     }
     if (found.size() != symbolicNames.size()) {
+      // TODO better message
       throw new ServiceException("not all client bundles found");
     }
     // TODO sort?
@@ -107,7 +108,6 @@ final class ProxyService implements BundleListener, ProxyFlusher {
     if (remoteServiceHeader != null) {
       return remoteServiceHeader;
     } else {
-      // TODO check
       return "OSGI-INF/remote-service";
     }
   }
@@ -311,15 +311,8 @@ final class ProxyService implements BundleListener, ProxyFlusher {
       ClassLoader oldContextClassLoader = currentThread.getContextClassLoader();
       try {
         currentThread.setContextClassLoader(this.classLoader);
-        Object proxy;
-        try {
-          proxy = namingContext.lookup(jndiName);
-          return this.interfaceClazz.cast(proxy);
-        } catch (NamingException e) {
-          // FIXME
-          System.err.println(e);
-          throw e;
-        }
+        Object proxy = namingContext.lookup(jndiName);
+        return this.interfaceClazz.cast(proxy);
       } finally {
         currentThread.setContextClassLoader(oldContextClassLoader);
       }
