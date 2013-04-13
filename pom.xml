@@ -27,6 +27,7 @@
     <module>jboss</module>
     <module>jboss-client</module>
     <module>glassfish</module>
+    <module>glassfish-client</module>
   </modules>
 
   <developers>

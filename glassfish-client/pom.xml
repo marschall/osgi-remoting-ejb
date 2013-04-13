@@ -8,30 +8,19 @@
     <version>0.0.1-SNAPSHOT</version>
   </parent>
 
-  <artifactId>osgi-remoting-ejb-jboss</artifactId>
-  <packaging>bundle</packaging>
+  <artifactId>osgi-remoting-ejb-glassfish-client</artifactId>
+  <packaging>jar</packaging>
 
+<!-- 
   <dependencies>
     <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>osgi-remoting-ejb-api</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.jboss</groupId>
-      <artifactId>jboss-ejb-client</artifactId>
-      <!-- will be only used in OSGi environment where import-package will kick in -->
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.osgi</groupId>
-      <artifactId>org.osgi.core</artifactId>
-      <version>${osgi.version}</version>
-      <!-- will be only used in OSGi environment where import-package will kick in -->
-      <scope>provided</scope>
+      <groupId>org.glassfish.main.appclient.client</groupId>
+      <artifactId>gf-client</artifactId>
+      <version>3.1.2.2</version>
     </dependency>
   </dependencies>
-
+ -->
+ 
   <build>
     <plugins>
       <plugin>
@@ -43,17 +32,12 @@
             <index>true</index>
           </archive>
           <instructions>
-            <Import-Package>
-              *
-            </Import-Package>
             <Bundle-SymbolicName>${project.groupId}.${project.artifactId};singleton:=true</Bundle-SymbolicName>
             <Bundle-ActivationPolicy>lazy</Bundle-ActivationPolicy>
             <Bundle-RequiredExecutionEnvironment>JavaSE-1.6</Bundle-RequiredExecutionEnvironment>
-            <!-- http://day-cq.blogspot.ch/2011/04/including-resources-in-osgi-bundle.html -->
-            <Include-Resource>
-              {maven-resources}
-            </Include-Resource>
-            <Service-Component>OSGI-INF/component.xml</Service-Component>
+            <Embed-Dependency>*;scope=compile|runtime;inline=false;artifactId=!jboss-logging</Embed-Dependency>
+            <Embed-Transitive>true</Embed-Transitive>
+            <Bundle-ClassPath>{maven-dependencies},.</Bundle-ClassPath>
           </instructions>
         </configuration>
       </plugin>
