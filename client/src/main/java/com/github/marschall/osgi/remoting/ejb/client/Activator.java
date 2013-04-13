@@ -54,7 +54,7 @@ public class Activator implements BundleActivator {
         } else {
           try {
             // TODO schedule
-            Thread.sleep(TimeUnit.SECONDS.toMillis(1L));
+            Thread.sleep(TimeUnit.MILLISECONDS.toMillis(100L));
             e.submit(this);
           } catch (InterruptedException e1) {
             Thread.currentThread().interrupt();

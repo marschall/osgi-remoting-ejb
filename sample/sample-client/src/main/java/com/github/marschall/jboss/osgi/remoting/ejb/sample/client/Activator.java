@@ -64,7 +64,7 @@ public class Activator implements BundleActivator {
             callServices();
           } else {
             try {
-              Thread.sleep(TimeUnit.SECONDS.toMillis(1L));
+              Thread.sleep(TimeUnit.MILLISECONDS.toMillis(100L));
               e.submit(this);
             } catch (InterruptedException e1) {
               Thread.currentThread().interrupt();
