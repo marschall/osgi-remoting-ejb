@@ -51,6 +51,23 @@ Cons
 ----
 Only one EJB client library is supported at runtime, starting, stopping and restarting this library is not supported.
 
+Annotation Processor
+--------------------
+A Java 6 annotation processor is provided that generates OSGi Remoting service XML files that follow Java EE 6 portable JNDI syntax
+
+	app-name/module-name/bean-name!bean-interface
+
+To use the processor
+* a dependency on `com.github.marschall:osgi-remoting-ejb-processor6` with scope `provided` has to be specified in the EJB project
+* the processor argument `javax.ejb.module.name` has to be set to the module name
+* the processor argument `javax.ejb.application.name` has to be set to the application name
+
+In addition when the argument `org.jboss.distinct.name` is set (can be empty) then JBoss proprietary EJB names are generated
+
+	ejb:app-name/module-name/distinct-name/bean-name!fully-qualified-classname-of-the-remote-interface(?stateful)
+
+A concrete example can be found in osgi-remoting-ejb-sample-ejb.
+
 Authentication
 --------------
 There is not API for doing authentication as it's not covered by OSGi Remoting. Authentication has to be done through the proprietary EJB client library API.
@@ -71,31 +88,29 @@ To enable dynamic starting and stopping of ejb-client JARs an `InitialContext` p
 
 Deploying
 ---------
-following bundles have to be auto started
-* generic client
-* specific client (eg. autostart)
-
-Sample Client
--------------
-Make sure you deploy `org.eclipse.equinox.ds`, `org.eclipse.equinox.util`
-and `org.eclipse.equinox.console` `org.apache.gogo.shell` are recommended
+When deploying attention has to be paid that
+* the bundle `osgi-remoting-ejb-client` is started automatically
+* an implementation of `com.github.marschall.osgi.remoting.ejb.api.InitialContextService` (eg. `osgi-remoting-ejb-client`) is registered (eg. through Dynamic Services / Service Component Runtime)
 
 Adding a new Client Library
 ---------------------------
-* have all required client libraries available as OSGi bundles (can be done through wrapping)
-* implement com.github.marschall.osgi.remoting.ejb.api.InitialContextService
-* make sure osgi-remoting-ejb-client is started (eg. Dynamic Services / Service Component Runtime)
+To add support for a new EJB client library the following things have to be provided
+* all required EJB client libraries as OSGi bundles (can be done through wrapping)
+
+Sample Client on Equinox
+------------------------
+When you deploy the sample client on Equinox make sure you deploy the bundles `org.eclipse.equinox.ds` and `org.eclipse.equinox.util`. In addition it's recommended that you deploy the bundles `org.eclipse.equinox.console` and `org.apache.gogo.shell`. In addition `osgi-remoting-ejb-client` has to be auto stared.
 
 JBoss
 -----
 To make the JBoss client libraries provided with this project work the following steps have to be taken:
-* add the following VM argument `-Dorg.osgi.framework.system.packages.extra=sun.nio.ch,sun.refelect`, this is independent of this project
-* deploy the following bundles:
+* the following VM argument has to be set `-Dorg.osgi.framework.system.packages.extra=sun.nio.ch,sun.refelect`
+* the following bundles have to be deployed:
  * org.jboss.spec.javax.transaction.jboss-transaction-api_1.1_spec
  * org.jboss.spec.javax.ejb.jboss-ejb-api_3.1_spec
  * javax.xml.jaxrpc-api-osgi
  * org.jboss.logging.jboss-logging
-* client library has to be deployed unpacked
+* client library (osgi-remoting-ejb-jboss-client) has to be deployed unpacked
 
 OSGi Service Lookup
 -------------------
@@ -105,7 +120,8 @@ You can use the filter `(service.imported=*)` to be sure you only get remote ser
 
 ejb-client JARs
 ---------------
-* have to OSGi bundles with their (direct) dependencies specified through `Require-Bundle` or `Import-Package` but no dependencies on EJB client libraries
+ejb-client JARs deployed in OSGi have to meet the following requirements
+* have to be OSGi bundles with their (direct) dependencies specified through `Require-Bundle` or `Import-Package` but no dependencies on EJB client libraries
 * when running in Equinox need to have the following bundle header `Bundle-ActivationPolicy: lazy`
 * have to have an OSGi remote service XML in `OSGI-INF/remote-service` or a different location specified through the `Remote-Service` bundle header. The easiest way to do this is through the included annotation processor.
 
