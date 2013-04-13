@@ -90,14 +90,6 @@ public class Activator implements BundleActivator {
     } else {
       throw new IllegalArgumentException("service not found: " + clazz);
     }
-    //    Collection<ServiceReference<T>> references = context.getServiceReferences(clazz, null);
-    //    if (!references.isEmpty()) {
-    //      ServiceReference<T> reference = references.iterator().next();
-    //      this.serviceReferences.add(reference);
-    //      return context.getService(reference);
-    //    } else {
-    //      throw new IllegalArgumentException("service not found: " + clazz);
-    //    }
   }
 
   @Override
