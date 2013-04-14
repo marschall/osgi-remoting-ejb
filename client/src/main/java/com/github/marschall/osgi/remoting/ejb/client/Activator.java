@@ -52,7 +52,6 @@ public class Activator implements BundleActivator {
     @Override
     public void removedService(ServiceReference<InitialContextService> reference, InitialContextService service) {
       context.ungetService(reference);
-      
     }
     
   }

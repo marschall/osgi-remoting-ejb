@@ -121,6 +121,16 @@ ejb-client JARs deployed in OSGi have to meet the following requirements
 * when running in Equinox the bundle header `Bundle-ActivationPolicy: lazy` has to be set
 * an OSGi remote service.xml in `OSGI-INF/remote-service` or a different location specified through the `Remote-Service` bundle header. The easiest way to do this is through the included annotation processor.
 
+Requirements
+------------
+This project requires at least Java 6.
+
+Caveats
+-------
+You must not make any service calls from an OSGi callback thread (`BundleListener`, `ServiceListener`, `ServiceTrackerCustomizer`, …).
+
+You should not make any service calls from the UI thread.
+
 Open Issues
 -----------
 * JBoss client library is twice the size it needs to be.
