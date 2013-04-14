@@ -133,6 +133,5 @@ You should not make any service calls from the UI thread.
 
 Open Issues
 -----------
-* JBoss client library is twice the size it needs to be.
-* GlassFish library is not complete
+GlassFish client library is not yet implemented.
 

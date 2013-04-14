@@ -67,12 +67,12 @@
                 org.jboss.modules;resolution:=optional,
                 *;-noimport:=true
             </Import-Package>
-            <Export-Package>*;-split-package:=merge-last</Export-Package>
             <Bundle-SymbolicName>${project.groupId}.${project.artifactId};singleton:=true</Bundle-SymbolicName>
             <Bundle-ActivationPolicy>lazy</Bundle-ActivationPolicy>
             <Bundle-RequiredExecutionEnvironment>JavaSE-1.6</Bundle-RequiredExecutionEnvironment>
             <Embed-Dependency>*;scope=compile|runtime;inline=false;artifactId=!jboss-logging</Embed-Dependency>
             <Embed-Transitive>true</Embed-Transitive>
+            <_exportcontents>*;-split-package:=merge-last</_exportcontents>
             <Bundle-ClassPath>{maven-dependencies}</Bundle-ClassPath>
           </instructions>
         </configuration>
