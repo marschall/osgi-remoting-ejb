@@ -19,8 +19,6 @@ import com.github.marschall.jboss.osgi.remoting.ejb.sample.StatelessRemote2;
 
 public class Activator implements BundleActivator {
 
-  private volatile Filter filter;
-
   private volatile Queue<ServiceTracker<?, ?>> trackers;
 
   private volatile BundleContext context;
@@ -31,7 +29,6 @@ public class Activator implements BundleActivator {
   public void start(BundleContext context) throws Exception {
     this.context = context;
     this.trackers = new LinkedBlockingQueue<ServiceTracker<?, ?>>();
-    this.filter = context.createFilter("(service.imported=*)");
 
     this.serviceTracker = new ServiceTracker<StatelessRemote1, StatelessRemote1>(context, StatelessRemote1.class, new WaitForProxies());
     this.serviceTracker.open(true);
@@ -81,8 +78,14 @@ public class Activator implements BundleActivator {
   }
 
   private <T> T lookup(Class<T> clazz) {
-    // TODO filter
-    ServiceTracker<T,T> tracker = new ServiceTracker<T, T>(context, clazz, null);
+    String filterString = "(&(objectClass=" + clazz.getName() + ")(service.imported=*))";
+    Filter filter;
+    try {
+      filter = context.createFilter(filterString);
+    } catch (InvalidSyntaxException e1) {
+      throw new RuntimeException("invalid filter: " + filterString);
+    }
+    ServiceTracker<T,T> tracker = new ServiceTracker<T, T>(context, filter, null);
     tracker.open(true);
     this.trackers.add(tracker);
     T service = tracker.getService();
@@ -104,8 +107,6 @@ public class Activator implements BundleActivator {
 
   @Override
   public void stop(BundleContext context) throws Exception {
-    this.filter = null;
-
     ServiceTracker<?,?> tracker = this.trackers.poll();
     while (tracker != null) {
       tracker.close();
