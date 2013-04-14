@@ -127,5 +127,5 @@ ejb-client JARs deployed in OSGi have to meet the following requirements
 
 Open Issues
 -----------
-JBoss client library is twice the size it needs to be.
+GlassFish client library is not yet implemented.
 
