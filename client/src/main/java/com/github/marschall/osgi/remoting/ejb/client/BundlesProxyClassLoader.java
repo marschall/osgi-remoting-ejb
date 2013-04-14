@@ -37,7 +37,6 @@ final class BundlesProxyClassLoader extends ClassLoader {
   }
 
 
-
   // Note: Both ClassLoader.getResources(...) and bundle.getResources(...) consult
   // the boot classloader. As a result, BundleProxyClassLoader.getResources(...)
   // might return duplicate results from the boot classloader. Prior to Java 5
