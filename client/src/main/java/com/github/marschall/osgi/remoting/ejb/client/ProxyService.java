@@ -73,7 +73,7 @@ final class ProxyService implements BundleListener, ProxyFlusher {
     this.flusherRegisterService = this.bundleContext.registerService(ProxyFlusher.class, this, new Hashtable<String, Object>());
   }
 
-  private Collection<Bundle> lookUpParentBundles() {
+  private Bundle[] lookUpParentBundles() {
     Set<String> symbolicNames = this.initialContextService.getClientBundleSymbolicNames();
     Map<String, Bundle> found = new HashMap<String, Bundle>(symbolicNames.size());
     for (Bundle bundle : bundleContext.getBundles()) {
@@ -88,7 +88,8 @@ final class ProxyService implements BundleListener, ProxyFlusher {
       throw new ServiceException("not all client bundles found");
     }
     // TODO sort?
-    return found.values();
+    Collection<Bundle> bundles = found.values();
+    return bundles.toArray(new Bundle[bundles.size()]);
   }
 
 

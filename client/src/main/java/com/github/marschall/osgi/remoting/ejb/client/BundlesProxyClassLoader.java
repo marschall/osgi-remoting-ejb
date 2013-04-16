@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
-import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -30,9 +29,9 @@ final class BundlesProxyClassLoader extends ClassLoader {
     }
   }
 
-  private final Collection<Bundle> bundles;
+  private final Bundle[] bundles;
 
-  BundlesProxyClassLoader(Collection<Bundle> bundles) {
+  BundlesProxyClassLoader(Bundle[] bundles) {
     this.bundles = bundles;
   }
 
@@ -59,7 +58,7 @@ final class BundlesProxyClassLoader extends ClassLoader {
 
     ResourceEnumeration(String name) {
       this.name = name;
-      this.bundleIterator = bundles.iterator();
+      this.bundleIterator = new ArrayIterator<Bundle>(bundles);
     }
 
     private boolean next() {
@@ -141,5 +140,34 @@ final class BundlesProxyClassLoader extends ClassLoader {
     }
     return clazz;
   }
+  
+  static final class ArrayIterator<T> implements Iterator<T> {
+    
+    private final T[] array;
+    private int index;
 
+    ArrayIterator(T[] array) {
+      this.array = array;
+      this.index = 0;
+    }
+
+    @Override
+    public boolean hasNext() {
+      return this.index < this.array.length;
+    }
+
+    @Override
+    public T next() {
+      return this.array[this.index++];
+    }
+
+    @Override
+    public void remove() {
+      throw new UnsupportedOperationException();
+    }
+    
+    
+    
+  }
+ 
 }
