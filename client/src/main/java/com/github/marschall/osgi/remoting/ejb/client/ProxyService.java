@@ -192,8 +192,7 @@ final class ProxyService implements BundleListener, ProxyFlusher {
         Object service = Proxy.newProxyInstance(classLoader, new Class[]{interfaceClass}, serviceCaller);
         callers.add(serviceCaller);
         // TODO properties
-        // TODO connection name
-        // org.osgi.framework.Constants objectClass value must be of type String[]
+        // TODO exported configs
         // org.osgi.service.remoteserviceadmin.RemoteConstants.ENDPOINT_ID
         Dictionary<String, Object> properties = new Hashtable<String, Object>();
         properties.put("service.imported", true);

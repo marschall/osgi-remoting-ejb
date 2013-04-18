@@ -35,7 +35,6 @@ class ServiceCaller implements InvocationHandler {
 
   @Override
   public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-    // TODO check we're not in the UI thread
     Thread currentThread = Thread.currentThread();
     ClassLoader oldContextClassLoader = currentThread.getContextClassLoader();
     currentThread.setContextClassLoader(this.classLoader);
@@ -43,8 +42,12 @@ class ServiceCaller implements InvocationHandler {
       if (!this.valid) {
         throw new IllegalStateException("service is no longer valid");
       }
+      // TODO if hashCode
+      // system.identity hashCode
+      // if toString
+      // if equals && length == 1
+      // proxy == args[1]
       return method.invoke(this.serviceProxy.get(), args);
-      // javax.security.sasl.SaslException
     } catch (Throwable t) {
       // TODO service reference
       String message = "service call " + method.getDeclaringClass().getName() + "#" + method.getName() + "() failed";

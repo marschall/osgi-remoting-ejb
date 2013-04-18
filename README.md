@@ -131,6 +131,10 @@ You must not make any service calls from an OSGi callback thread (`BundleListene
 
 You should not make any service calls from the UI thread.
 
+Customization
+-------------
+To add custom features like call logging or exception handling implementing a `ServiceListener` and wrapping the services is recommended.
+
 Open Issues
 -----------
 GlassFish client library is not yet implemented.
