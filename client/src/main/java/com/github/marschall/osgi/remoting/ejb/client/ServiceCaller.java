@@ -42,11 +42,6 @@ class ServiceCaller implements InvocationHandler {
       if (!this.valid) {
         throw new IllegalStateException("service is no longer valid");
       }
-      // TODO if hashCode
-      // system.identity hashCode
-      // if toString
-      // if equals && length == 1
-      // proxy == args[1]
       return method.invoke(this.serviceProxy.get(), args);
     } catch (Throwable t) {
       // TODO service reference

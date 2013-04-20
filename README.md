@@ -86,6 +86,12 @@ Design Decisions/Trade Offs
 ---------------------------
 To enable dynamic starting and stopping of ejb-client JARs an `InitialContext` per bundle is created (and closed). This adds a small overhead.
 
+The methods `#equals(Object)`, `#hashCode()` and `#toString()` are not intercepted by the OSGi service but instead forwarded to the EJB client proxy.
+
+> ### 3.4.7 Session Object Identity ###
+> 
+> A client can test two EJB 3.x Remote/Local view references for identity by means of the `Object.equals` and `Object.hashCode` methods.
+
 Deploying
 ---------
 When deploying care has to be taken that that
