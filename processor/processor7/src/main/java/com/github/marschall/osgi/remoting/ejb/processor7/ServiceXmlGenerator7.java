@@ -1,7 +1,10 @@
 package com.github.marschall.osgi.remoting.ejb.processor7;
 
+import static javax.lang.model.SourceVersion.RELEASE_7;
+
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.annotation.processing.SupportedOptions;
+import javax.annotation.processing.SupportedSourceVersion;
 
 import com.github.marschall.osgi.remoting.ejb.processor.ServiceXmlGenerator;
 
@@ -15,8 +18,7 @@ import com.github.marschall.osgi.remoting.ejb.processor.ServiceXmlGenerator;
   "javax.ejb.Stateless",
   "javax.ejb.Singleton"
 })
-// TODO
-//@SupportedSourceVersion(RELEASE_7)
+@SupportedSourceVersion(RELEASE_7)
 public class ServiceXmlGenerator7 extends ServiceXmlGenerator {
 
 }
