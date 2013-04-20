@@ -36,11 +36,8 @@ public class GlassFishInitialContextService implements InitialContextService {
     Properties props = new Properties();
 
     props.setProperty(Context.INITIAL_CONTEXT_FACTORY, "com.sun.enterprise.naming.SerialInitContextFactory");
-
     props.setProperty(Context.URL_PKG_PREFIXES, "com.sun.enterprise.naming");
-
     props.setProperty(Context.STATE_FACTORIES, "com.sun.corba.ee.impl.presentation.rmi.JNDIStateFactoryImpl");
-
 
     // optional.  Defaults to localhost.  Only needed if web server is running 
     // on a different host than the appserver    

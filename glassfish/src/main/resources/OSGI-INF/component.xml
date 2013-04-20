@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" immediate="true" name="GlassFish InitialContext Service">
+   <implementation class="com.github.marschall.osgi.remoting.ejb.glassfish.GlassFishInitialContextService"/>
+   <service>
+      <provide interface="com.github.marschall.osgi.remoting.ejb.api.InitialContextService"/>
+   </service>
    <implementation class="com.github.marschall.osgi.remoting.ejb.glassfish.GlassFishInitialConte
    <service>
       <provide interface="com.github.marschall.osgi.remoting.ejb.api.InitialContextService"/>

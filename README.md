@@ -145,3 +145,5 @@ Open Issues
 -----------
 GlassFish client library is not yet implemented.
 
+Geronimo client library is not yet implemented.
+
