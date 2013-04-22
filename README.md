@@ -147,3 +147,5 @@ GlassFish client library is not yet implemented.
 
 Geronimo client library is not yet implemented.
 
+An ESA (Enterprise Subsystem Archive) would be nice http://coderthoughts.blogspot.ch/2013/04/osgi-subsystems.html http://svn.apache.org/repos/asf/aries/trunk/esa-maven-plugin/pom.xml 
+
