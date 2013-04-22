@@ -25,7 +25,7 @@ Contents
 --------
 This project includes the following components:
 * core, sever independent library that switches the TCCL and registers the OSGi services
-* Java 6 annotation processor processor that generates the required service.xml files for the ejb-client JARs
+* Java 6 and 7 annotation processors that generate the required service.xml files for the ejb-client JARs
 * sample integration for JBoss
 * sample JBoss EJB client library bundle
 * sample EJB
@@ -53,12 +53,12 @@ Only one EJB client library is supported at runtime — starting, stopping and r
 
 Annotation Processor
 --------------------
-A Java 6 annotation processor is provided that generates OSGi Remoting service.xml files that follow Java EE 6 portable JNDI syntax
+Both a Java 6 and a 7 annotation processor are provided that generate OSGi Remoting service.xml files that follow Java EE 6 portable JNDI syntax
 
 	app-name/module-name/bean-name!bean-interface
 
 To use the processor
-* a dependency on `com.github.marschall:osgi-remoting-ejb-processor6` with scope `provided` has to be specified in the EJB project
+* a dependency on `com.github.marschall:osgi-remoting-ejb-processor6` or `com.github.marschall:osgi-remoting-ejb-processor7` with scope `provided` has to be specified in the EJB project
 * the processor argument `javax.ejb.module.name` has to be set to the module name
 * the processor argument `javax.ejb.application.name` has to be set to the application name
 
@@ -146,4 +146,6 @@ Open Issues
 GlassFish client library is not yet implemented.
 
 Geronimo client library is not yet implemented.
+
+An ESA (Enterprise Subsystem Archive) would be nice http://coderthoughts.blogspot.ch/2013/04/osgi-subsystems.html http://svn.apache.org/repos/asf/aries/trunk/esa-maven-plugin/pom.xml 
 
