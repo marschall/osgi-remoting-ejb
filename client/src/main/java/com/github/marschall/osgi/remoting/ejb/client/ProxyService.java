@@ -18,6 +18,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -51,7 +53,8 @@ final class ProxyService implements BundleListener, ProxyFlusher {
   private final ExecutorService executorService;
 
   private volatile ServiceRegistration<ProxyFlusher> flusherRegisterService;
-
+  
+  private final Lock initializationLock;
 
   ProxyService(BundleContext bundleContext, LoggerBridge logger, ExecutorService executorService) {
     this.bundleContext = bundleContext;
@@ -59,18 +62,21 @@ final class ProxyService implements BundleListener, ProxyFlusher {
     this.executorService = executorService;
     this.contexts = new ConcurrentHashMap<Bundle, BundleProxyContext>();
     this.parser = new ServiceXmlParser();
+    this.initializationLock = new ReentrantLock(false);
   }
 
   void setInitialContextService(InitialContextService initialContextService) {
-    this.initialContextService = initialContextService;
-    this.parent = new BundlesProxyClassLoader(this.lookUpParentBundles());
-
-    this.bundleContext.addBundleListener(this);
-
-    Bundle[] bundles = this.bundleContext.getBundles();
-    this.initialBundles(bundles);
-
-    this.flusherRegisterService = this.bundleContext.registerService(ProxyFlusher.class, this, new Hashtable<String, Object>());
+    this.initializationLock.lock();
+    try {
+      this.initialContextService = initialContextService;
+      this.parent = new BundlesProxyClassLoader(this.lookUpParentBundles());
+      
+      this.flushProxies();
+      
+      this.flusherRegisterService = this.bundleContext.registerService(ProxyFlusher.class, this, new Hashtable<String, Object>());
+    } finally {
+      this.initializationLock.unlock();
+    }
   }
 
   private Bundle[] lookUpParentBundles() {
@@ -158,53 +164,62 @@ final class ProxyService implements BundleListener, ProxyFlusher {
   }
 
   void registerServices(Bundle bundle, ParseResult result) {
-    ClassLoader classLoader = createClassLoader(bundle);
-    Thread currentThread = Thread.currentThread();
-    ClassLoader oldContextClassLoader = currentThread.getContextClassLoader();
-    // switch TCCL only once for all the look ups
-    currentThread.setContextClassLoader(classLoader);
-
-    List<ServiceCaller> callers = new ArrayList<ServiceCaller>(result.size());
-    List<ServiceRegistration<?>> registrations = new ArrayList<ServiceRegistration<?>>(result.size());
-    Context namingContext;
+    this.initializationLock.lock();
     try {
-      namingContext = this.createNamingContext();
-    } catch (NamingException e) {
-      // there isn't really anything anybody can do
-      // but we shouldn't pump exception into the OSGi framework
-      this.logger.warning("could not register bundle: " + bundle, e);
-      return;
-    }
-
-    try {
-      for (ServiceInfo info : result.services) {
-        Class<?> interfaceClass;
-        Future<?> serviceProxy;
-        try {
-          interfaceClass = classLoader.loadClass(info.interfaceName);
-          serviceProxy = this.lookUpServiceProxy(interfaceClass, info.jndiName, namingContext, classLoader);
-        } catch (ClassNotFoundException e) {
-          this.logger.warning("failed to load interface class: " + info.interfaceName
-              + ", remote service will not be available", e);
-          continue;
-        }
-        ServiceCaller serviceCaller = new ServiceCaller(serviceProxy, classLoader, this.logger, info.jndiName);
-        Object service = Proxy.newProxyInstance(classLoader, new Class[]{interfaceClass}, serviceCaller);
-        callers.add(serviceCaller);
-        // TODO properties
-        // TODO exported configs
-        // org.osgi.service.remoteserviceadmin.RemoteConstants.ENDPOINT_ID
-        Dictionary<String, Object> properties = new Hashtable<String, Object>();
-        properties.put("service.imported", true);
-        properties.put("com.github.marschall.osgi.remoting.ejb.jndiName", info.jndiName);
-        ServiceRegistration<?> serviceRegistration = this.bundleContext.registerService((Class<Object>) interfaceClass, service, properties);
-        registrations.add(serviceRegistration);
+      
+      ClassLoader classLoader = createClassLoader(bundle);
+      Thread currentThread = Thread.currentThread();
+      ClassLoader oldContextClassLoader = currentThread.getContextClassLoader();
+      // switch TCCL only once for all the look ups
+      currentThread.setContextClassLoader(classLoader);
+      
+      List<ServiceCaller> callers = new ArrayList<ServiceCaller>(result.size());
+      List<ServiceRegistration<?>> registrations = new ArrayList<ServiceRegistration<?>>(result.size());
+      Context namingContext;
+      try {
+        namingContext = this.createNamingContext();
+      } catch (NamingException e) {
+        // there isn't really anything anybody can do
+        // but we shouldn't pump exception into the OSGi framework
+        this.logger.warning("could not register bundle: " + bundle, e);
+        return;
       }
+      
+      try {
+        for (ServiceInfo info : result.services) {
+          Class<?> interfaceClass;
+          try {
+            interfaceClass = classLoader.loadClass(info.interfaceName);
+          } catch (ClassNotFoundException e) {
+            this.logger.warning("failed to load interface class: " + info.interfaceName
+                + ", remote service will not be available", e);
+            continue;
+          }
+          Future<?> serviceProxy = this.lookUpServiceProxy(interfaceClass, info.jndiName, namingContext, classLoader);
+          ServiceCaller serviceCaller = new ServiceCaller(serviceProxy, classLoader, this.logger, info.jndiName);
+          Object service = Proxy.newProxyInstance(classLoader, new Class[]{interfaceClass}, serviceCaller);
+          callers.add(serviceCaller);
+          // TODO properties
+          // TODO exported configs
+          // org.osgi.service.remoteserviceadmin.RemoteConstants.ENDPOINT_ID
+          Dictionary<String, Object> properties = new Hashtable<String, Object>();
+          properties.put("service.imported", true);
+          properties.put("com.github.marschall.osgi.remoting.ejb.jndiName", info.jndiName);
+          ServiceRegistration<?> serviceRegistration = this.bundleContext.registerService((Class<Object>) interfaceClass, service, properties);
+          registrations.add(serviceRegistration);
+        }
+      } finally {
+        currentThread.setContextClassLoader(oldContextClassLoader);
+      }
+      
+      BundleProxyContext bundleProxyContext = new BundleProxyContext(namingContext, callers, registrations, classLoader);
+      registerBundleProxyContext(bundle, bundleProxyContext);
     } finally {
-      currentThread.setContextClassLoader(oldContextClassLoader);
+      this.initializationLock.unlock();
     }
+  }
 
-    BundleProxyContext bundleProxyContext = new BundleProxyContext(namingContext, callers, registrations, classLoader);
+  private void registerBundleProxyContext(Bundle bundle, BundleProxyContext bundleProxyContext) {
     // detect double registration is case of concurrent call by #bundleChanged and #initialBundles
     BundleProxyContext previous = this.contexts.putIfAbsent(bundle, bundleProxyContext);
     if (previous != null) {
@@ -218,7 +233,11 @@ final class ProxyService implements BundleListener, ProxyFlusher {
   }
 
   private Future<?> lookUpServiceProxy(Class<?> interfaceClazz, String jndiName, Context namingContext, ClassLoader classLoader) {
-    return this.executorService.submit(new ProxyLookUp(interfaceClazz, jndiName, namingContext, classLoader));
+    if (this.initialContextService == null) {
+      return new SettableFuture<Object>();
+    } else {
+      return this.executorService.submit(new ProxyLookUp(interfaceClazz, jndiName, namingContext, classLoader));
+    }
   }
 
   private Context createNamingContext() throws NamingException {
@@ -259,6 +278,22 @@ final class ProxyService implements BundleListener, ProxyFlusher {
 
   @Override
   public void flushProxies() {
+    NamingException lastCause = null;
+    for (BundleProxyContext proxyContext : contexts.values()) {
+      try {
+        proxyContext.flushProxies(this.initialContextService);
+      } catch (NamingException e) {
+        // TODO collect exceptions for SE 7
+        this.logger.error("could not flush proxy", e);
+        lastCause = e;
+      }
+    }
+    if (lastCause != null) {
+      throw new RuntimeException("could not flush all proxies", lastCause);
+    }
+  }
+  
+  void setProxies() {
     NamingException lastCause = null;
     for (BundleProxyContext proxyContext : contexts.values()) {
       try {
@@ -315,71 +350,6 @@ final class ProxyService implements BundleListener, ProxyFlusher {
         return this.interfaceClazz.cast(proxy);
       } finally {
         currentThread.setContextClassLoader(oldContextClassLoader);
-      }
-    }
-
-  }
-
-  static final class BundleProxyContext {
-
-    private volatile Context namingContext;
-
-    private final Collection<ServiceCaller> callers;
-
-    private final Collection<ServiceRegistration<?>> registrations;
-
-    private final ClassLoader classLoader;
-
-    BundleProxyContext(Context namingContext, Collection<ServiceCaller> callers,
-        Collection<ServiceRegistration<?>> registrations, ClassLoader classLoader) {
-      this.namingContext = namingContext;
-      this.callers = callers;
-      this.registrations = registrations;
-      this.classLoader = classLoader;
-    }
-
-    void release(BundleContext bundleContext) throws NamingException {
-      this.unregisterServices(bundleContext);
-      this.invalidateCallers();
-      this.closeNamingConext();
-    }
-
-    private void closeNamingConext() throws NamingException {
-      this.namingContext.close();
-    }
-
-    private void unregisterServices(BundleContext bundleContext) {
-      for (ServiceRegistration<?> registration : this.registrations) {
-        bundleContext.ungetService(registration.getReference());
-      }
-    }
-
-    void flushProxies(InitialContextService initialContextService) throws NamingException {
-      Thread currentThread = Thread.currentThread();
-      ClassLoader oldClassLoader = currentThread.getContextClassLoader();
-      currentThread.setContextClassLoader(this.classLoader);
-
-      try {
-        this.namingContext.close();
-        Hashtable<?,?> environment = initialContextService.getEnvironment();
-        if (environment != null) {
-          this.namingContext = new InitialContext(environment);
-        } else {
-          this.namingContext = new InitialContext();
-        }
-        for (ServiceCaller caller : this.callers) {
-          // TODO catch NamingException (collect causes for SE 7)
-          caller.flushProxy(this.namingContext);
-        }
-      } finally{
-        currentThread.setContextClassLoader(oldClassLoader);
-      }
-
-    }
-
-    private void invalidateCallers() {
-      for (ServiceCaller caller : callers) {
-        caller.invalidate();
       }
     }
 

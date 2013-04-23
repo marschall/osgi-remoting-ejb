@@ -4,8 +4,10 @@ import static org.osgi.framework.ServiceException.REMOTE;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import javax.naming.Context;
 import javax.naming.NamingException;
@@ -54,13 +56,20 @@ class ServiceCaller implements InvocationHandler {
   }
   
   void flushProxy(Context namingContext) throws NamingException {
-    this.serviceProxy = new CompletedFuture<Object>(namingContext.lookup(jndiName));
+    Object service = namingContext.lookup(jndiName);
+    Future<?> currentProxy = this.serviceProxy;
+    if (currentProxy instanceof SettableFuture) {
+      SettableFuture settableFuture = (SettableFuture) currentProxy;
+      settableFuture.setValue(service);
+    }
+    this.serviceProxy = new CompletedFuture<Object>(service);
   }
 
   void invalidate() {
     this.valid = false;
   }
   
+
   static final class CompletedFuture<T> implements Future<T> {
     
     private final T value;

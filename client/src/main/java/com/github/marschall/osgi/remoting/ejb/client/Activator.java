@@ -4,6 +4,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
+import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
@@ -27,6 +28,10 @@ public class Activator implements BundleActivator {
     this.executor = Executors.newSingleThreadExecutor(new LookUpThreadFactory());
     
     this.proxyService = new ProxyService(context, this.logger, this.executor);
+    
+    Bundle[] bundles = context.getBundles();
+    this.proxyService.initialBundles(bundles);
+    context.addBundleListener(this.proxyService);
     
     // this will trigger the loading of the InitialContextService service implementation
     // however loading can only start once this bundle has been activated
