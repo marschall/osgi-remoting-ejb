@@ -40,6 +40,8 @@ The advantages of this project are:
 * supports dynamic starting and stopping of EJB client bundles at run time
 * with little effort support every EJB client library that uses JNDI can be supported
 * the look up of service proxies (can involve network access) is in its own thread to reduce impact on framework start up
+* remote EJBs can be injected using [OSGi Declarative Services](http://wiki.osgi.org/wiki/Declarative_Services)
+* remote EJBs can be injected using [Eclipse 4 Dependency Injection](http://wiki.eclipse.org/Eclipse4/RCP/Dependency_Injection)
 
 In addition the following «OSGi smells» are avoided:
 * [buddy classloading](http://wiki.eclipse.org/Context_Class_Loader_Enhancements#Buddy_Class_Loading)
