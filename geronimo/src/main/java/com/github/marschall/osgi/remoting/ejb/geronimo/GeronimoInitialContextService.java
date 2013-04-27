@@ -1,5 +1,6 @@
 package com.github.marschall.osgi.remoting.ejb.geronimo;
 
+import java.util.Collections;
 import java.util.Hashtable;
 import java.util.Set;
 
@@ -8,6 +9,13 @@ import javax.naming.Context;
 import com.github.marschall.osgi.remoting.ejb.api.InitialContextService;
 
 public class GeronimoInitialContextService implements InitialContextService {
+  
+  static final Set<String> SYMBOLIC_NAMES;
+  
+  static {
+    // everything else is a dependency of this
+    SYMBOLIC_NAMES = Collections.singleton("org.apache.openejb.client");
+  }
 
   @Override
   public Hashtable<?, ?> getEnvironment() {
@@ -25,8 +33,7 @@ public class GeronimoInitialContextService implements InitialContextService {
 
   @Override
   public Set<String> getClientBundleSymbolicNames() {
-    // TODO Auto-generated method stub
-    return null;
+    return SYMBOLIC_NAMES;
   }
 
 }

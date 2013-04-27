@@ -141,6 +141,8 @@ You must not make any service calls from an OSGi callback thread (`BundleListene
 
 You should not make any service calls from the UI thread.
 
+Service proxies can only be registered once the sole `InitialContextService` is registered because it's required for defining proper class loader.
+
 Customization
 -------------
 To add custom features like call logging or exception handling implementing a `ServiceListener` and wrapping the services is recommended.
