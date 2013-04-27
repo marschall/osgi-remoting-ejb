@@ -57,11 +57,6 @@ class ServiceCaller implements InvocationHandler {
   
   void flushProxy(Context namingContext) throws NamingException {
     Object service = namingContext.lookup(jndiName);
-    Future<?> currentProxy = this.serviceProxy;
-    if (currentProxy instanceof SettableFuture) {
-      SettableFuture settableFuture = (SettableFuture) currentProxy;
-      settableFuture.setValue(service);
-    }
     this.serviceProxy = new CompletedFuture<Object>(service);
   }
 

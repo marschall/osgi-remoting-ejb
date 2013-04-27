@@ -48,6 +48,14 @@
       <artifactId>jboss-marshalling-river</artifactId>
       <scope>runtime</scope>
     </dependency>
+    
+    <!-- has to be a bundle
+    <dependency>
+      <groupId>javax.xml</groupId>
+      <artifactId>jaxrpc-api-osgi</artifactId>
+      <version>1.1-b01</version>
+    </dependency>
+     -->
   </dependencies>
 
   <build>
