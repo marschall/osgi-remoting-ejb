@@ -155,3 +155,9 @@ Geronimo client library depends on [TOMEE-903](https://issues.apache.org/jira/br
 
 An ESA (Enterprise Subsystem Archive) would be nice http://coderthoughts.blogspot.ch/2013/04/osgi-subsystems.html http://svn.apache.org/repos/asf/aries/trunk/esa-maven-plugin/pom.xml 
 
+Links
+-----
+
+* [OSGi Best Practices](http://wiki.osgi.org/wiki/Category:Best_Practices)
+* [OSGi and Start Levels](http://eclipsesource.com/blogs/2009/06/10/osgi-and-start-levels/)
+
