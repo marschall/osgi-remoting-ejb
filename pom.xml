@@ -28,7 +28,6 @@
     <module>glassfish</module>
     <module>glassfish-client</module>
     <module>geronimo</module>
-    <module>geronimo-client</module>
   </modules>
 
   <developers>
