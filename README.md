@@ -143,6 +143,8 @@ You must not make any service calls from an OSGi callback thread (`BundleListene
 
 You should not make any service calls from the UI thread.
 
+Service proxies can only be registered once the sole `InitialContextService` is registered because it's required for defining proper class loader.
+
 Customization
 -------------
 To add custom features like call logging or exception handling implementing a `ServiceListener` and wrapping the services is recommended.
@@ -151,7 +153,13 @@ Open Issues
 -----------
 GlassFish client library is not yet implemented.
 
-Geronimo client library is not yet implemented.
+Geronimo client library depends on [TOMEE-903](https://issues.apache.org/jira/browse/TOMEE-903) being fixed.
 
 An ESA (Enterprise Subsystem Archive) would be nice http://coderthoughts.blogspot.ch/2013/04/osgi-subsystems.html http://svn.apache.org/repos/asf/aries/trunk/esa-maven-plugin/pom.xml 
+
+Links
+-----
+
+* [OSGi Best Practices](http://wiki.osgi.org/wiki/Category:Best_Practices)
+* [OSGi and Start Levels](http://eclipsesource.com/blogs/2009/06/10/osgi-and-start-levels/)
 

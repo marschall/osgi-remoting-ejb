@@ -29,10 +29,6 @@ public class Activator implements BundleActivator {
     
     this.proxyService = new ProxyService(context, this.logger, this.executor);
     
-    Bundle[] bundles = context.getBundles();
-    this.proxyService.initialBundles(bundles);
-    context.addBundleListener(this.proxyService);
-    
     // this will trigger the loading of the InitialContextService service implementation
     // however loading can only start once this bundle has been activated
     // therefore we need to move the waiting to a different thread

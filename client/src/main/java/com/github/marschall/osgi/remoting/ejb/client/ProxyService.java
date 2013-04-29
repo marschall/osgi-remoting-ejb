@@ -54,29 +54,26 @@ final class ProxyService implements BundleListener, ProxyFlusher {
 
   private volatile ServiceRegistration<ProxyFlusher> flusherRegisterService;
   
-  private final Lock initializationLock;
-
   ProxyService(BundleContext bundleContext, LoggerBridge logger, ExecutorService executorService) {
     this.bundleContext = bundleContext;
     this.logger = logger;
     this.executorService = executorService;
     this.contexts = new ConcurrentHashMap<Bundle, BundleProxyContext>();
     this.parser = new ServiceXmlParser();
-    this.initializationLock = new ReentrantLock(false);
   }
 
   void setInitialContextService(InitialContextService initialContextService) {
-    this.initializationLock.lock();
-    try {
-      this.initialContextService = initialContextService;
-      this.parent = new BundlesProxyClassLoader(this.lookUpParentBundles());
-      
-      this.flushProxies();
-      
-      this.flusherRegisterService = this.bundleContext.registerService(ProxyFlusher.class, this, new Hashtable<String, Object>());
-    } finally {
-      this.initializationLock.unlock();
-    }
+    this.initialContextService = initialContextService;
+    this.parent = new BundlesProxyClassLoader(this.lookUpParentBundles());
+
+    // first add the listener so we don't miss anything
+    this.bundleContext.addBundleListener(this);
+
+    // then query the bundles
+    Bundle[] bundles = this.bundleContext.getBundles();
+    this.initialBundles(bundles);
+
+    this.flusherRegisterService = this.bundleContext.registerService(ProxyFlusher.class, this, new Hashtable<String, Object>());
   }
 
   private Bundle[] lookUpParentBundles() {
@@ -85,8 +82,10 @@ final class ProxyService implements BundleListener, ProxyFlusher {
     for (Bundle bundle : bundleContext.getBundles()) {
       String symbolicName = bundle.getSymbolicName();
       if (symbolicNames.contains(symbolicName)) {
-        // TODO check version
-        found.put(symbolicName, bundle);
+        Bundle previous = found.put(symbolicName, bundle);
+        if (previous != null) {
+          this.logger.warning("non-unique bundle: " + symbolicName);
+        }
       }
     }
     if (found.size() != symbolicNames.size()) {
@@ -99,10 +98,10 @@ final class ProxyService implements BundleListener, ProxyFlusher {
   }
 
 
-  void initialBundles(Bundle[] bundles) {
+  private void initialBundles(Bundle[] bundles) {
     for (Bundle bundle : bundles) {
       int bundleState = bundle.getState();
-      if (bundleState == Bundle.STARTING || bundleState == Bundle.ACTIVE) {
+      if (bundleState == Bundle.ACTIVE) {
         this.addPotentialBundle(bundle);
       }
     }
@@ -164,59 +163,53 @@ final class ProxyService implements BundleListener, ProxyFlusher {
   }
 
   void registerServices(Bundle bundle, ParseResult result) {
-    this.initializationLock.lock();
+    ClassLoader classLoader = createClassLoader(bundle);
+    Thread currentThread = Thread.currentThread();
+    ClassLoader oldContextClassLoader = currentThread.getContextClassLoader();
+    // switch TCCL only once for all the look ups
+    currentThread.setContextClassLoader(classLoader);
+
+    List<ServiceCaller> callers = new ArrayList<ServiceCaller>(result.size());
+    List<ServiceRegistration<?>> registrations = new ArrayList<ServiceRegistration<?>>(result.size());
+    Context namingContext;
     try {
-      
-      ClassLoader classLoader = createClassLoader(bundle);
-      Thread currentThread = Thread.currentThread();
-      ClassLoader oldContextClassLoader = currentThread.getContextClassLoader();
-      // switch TCCL only once for all the look ups
-      currentThread.setContextClassLoader(classLoader);
-      
-      List<ServiceCaller> callers = new ArrayList<ServiceCaller>(result.size());
-      List<ServiceRegistration<?>> registrations = new ArrayList<ServiceRegistration<?>>(result.size());
-      Context namingContext;
-      try {
-        namingContext = this.createNamingContext();
-      } catch (NamingException e) {
-        // there isn't really anything anybody can do
-        // but we shouldn't pump exception into the OSGi framework
-        this.logger.warning("could not register bundle: " + bundle, e);
-        return;
-      }
-      
-      try {
-        for (ServiceInfo info : result.services) {
-          Class<?> interfaceClass;
-          try {
-            interfaceClass = classLoader.loadClass(info.interfaceName);
-          } catch (ClassNotFoundException e) {
-            this.logger.warning("failed to load interface class: " + info.interfaceName
-                + ", remote service will not be available", e);
-            continue;
-          }
-          Future<?> serviceProxy = this.lookUpServiceProxy(interfaceClass, info.jndiName, namingContext, classLoader);
-          ServiceCaller serviceCaller = new ServiceCaller(serviceProxy, classLoader, this.logger, info.jndiName);
-          Object service = Proxy.newProxyInstance(classLoader, new Class[]{interfaceClass}, serviceCaller);
-          callers.add(serviceCaller);
-          // TODO properties
-          // TODO exported configs
-          // org.osgi.service.remoteserviceadmin.RemoteConstants.ENDPOINT_ID
-          Dictionary<String, Object> properties = new Hashtable<String, Object>();
-          properties.put("service.imported", true);
-          properties.put("com.github.marschall.osgi.remoting.ejb.jndiName", info.jndiName);
-          ServiceRegistration<?> serviceRegistration = this.bundleContext.registerService((Class<Object>) interfaceClass, service, properties);
-          registrations.add(serviceRegistration);
-        }
-      } finally {
-        currentThread.setContextClassLoader(oldContextClassLoader);
-      }
-      
-      BundleProxyContext bundleProxyContext = new BundleProxyContext(namingContext, callers, registrations, classLoader);
-      registerBundleProxyContext(bundle, bundleProxyContext);
-    } finally {
-      this.initializationLock.unlock();
+      namingContext = this.createNamingContext();
+    } catch (NamingException e) {
+      // there isn't really anything anybody can do
+      // but we shouldn't pump exception into the OSGi framework
+      this.logger.warning("could not register bundle: " + bundle, e);
+      return;
     }
+
+    try {
+      for (ServiceInfo info : result.services) {
+        Class<?> interfaceClass;
+        try {
+          interfaceClass = classLoader.loadClass(info.interfaceName);
+        } catch (ClassNotFoundException e) {
+          this.logger.warning("failed to load interface class: " + info.interfaceName
+              + ", remote service will not be available", e);
+          continue;
+        }
+        Future<?> serviceProxy = this.lookUpServiceProxy(interfaceClass, info.jndiName, namingContext, classLoader);
+        ServiceCaller serviceCaller = new ServiceCaller(serviceProxy, classLoader, this.logger, info.jndiName);
+        Object service = Proxy.newProxyInstance(classLoader, new Class[]{interfaceClass}, serviceCaller);
+        callers.add(serviceCaller);
+        // TODO properties
+        // TODO exported configs
+        // org.osgi.service.remoteserviceadmin.RemoteConstants.ENDPOINT_ID
+        Dictionary<String, Object> properties = new Hashtable<String, Object>();
+        properties.put("service.imported", true);
+        properties.put("com.github.marschall.osgi.remoting.ejb.jndiName", info.jndiName);
+        ServiceRegistration<?> serviceRegistration = this.bundleContext.registerService((Class<Object>) interfaceClass, service, properties);
+        registrations.add(serviceRegistration);
+      }
+    } finally {
+      currentThread.setContextClassLoader(oldContextClassLoader);
+    }
+
+    BundleProxyContext bundleProxyContext = new BundleProxyContext(namingContext, callers, registrations, classLoader);
+    registerBundleProxyContext(bundle, bundleProxyContext);
   }
 
   private void registerBundleProxyContext(Bundle bundle, BundleProxyContext bundleProxyContext) {
@@ -233,11 +226,8 @@ final class ProxyService implements BundleListener, ProxyFlusher {
   }
 
   private Future<?> lookUpServiceProxy(Class<?> interfaceClazz, String jndiName, Context namingContext, ClassLoader classLoader) {
-    if (this.initialContextService == null) {
-      return new SettableFuture<Object>();
-    } else {
-      return this.executorService.submit(new ProxyLookUp(interfaceClazz, jndiName, namingContext, classLoader));
-    }
+    Callable<Object> lookUp = new ProxyLookUp(interfaceClazz, jndiName, namingContext, classLoader);
+    return this.executorService.submit(lookUp);
   }
 
   private Context createNamingContext() throws NamingException {
@@ -267,10 +257,10 @@ final class ProxyService implements BundleListener, ProxyFlusher {
   public void bundleChanged(BundleEvent event) {
     int eventType = event.getType();
     switch (eventType) {
-      case BundleEvent.STARTING:
+      case BundleEvent.STARTED:
         this.addPotentialBundle(event.getBundle());
         break;
-      case BundleEvent.STOPPING:
+      case BundleEvent.STOPPED:
         this.removePotentialBundle(event.getBundle());
         break;
     }

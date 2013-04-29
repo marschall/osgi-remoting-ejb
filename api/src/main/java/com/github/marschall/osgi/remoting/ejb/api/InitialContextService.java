@@ -38,6 +38,7 @@ public interface InitialContextService {
    * @return symbolic names of the bundles that have to be added to the
    *  class loader of each client bundle
    */
+  // TODO add option to add version (range)
   public Set<String> getClientBundleSymbolicNames();
 
 }
