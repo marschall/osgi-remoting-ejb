@@ -143,6 +143,8 @@ You should not make any service calls from the UI thread.
 
 Service proxies can only be registered once the sole `InitialContextService` is registered because it's required for defining proper class loader.
 
+The sample does work only with JBoss remote EJB, not with remote JNDI. The sample EJB does only work with JBoss to make it work with other servers `<Aorg.jboss.distinct.name />` has to be commented out.
+
 Customization
 -------------
 To add custom features like call logging or exception handling implementing a `ServiceListener` and wrapping the services is recommended.
