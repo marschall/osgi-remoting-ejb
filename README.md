@@ -153,6 +153,8 @@ GlassFish client library is not yet implemented.
 
 Geronimo client library depends on [TOMEE-903](https://issues.apache.org/jira/browse/TOMEE-903) being fixed.
 
+Use [http://wiki.osgi.org/wiki/Use_Configuration_Admin_for_Configuration](http://wiki.osgi.org/wiki/Use_Configuration_Admin_for_Configuration)
+
 An ESA (Enterprise Subsystem Archive) would be nice http://coderthoughts.blogspot.ch/2013/04/osgi-subsystems.html http://svn.apache.org/repos/asf/aries/trunk/esa-maven-plugin/pom.xml 
 
 Links
