@@ -113,11 +113,11 @@ JBoss
 To make the JBoss client libraries provided with this project work the following steps have to be taken:
 * the following VM argument has to be set `-Dorg.osgi.framework.system.packages.extra=sun.nio.ch,sun.refelect`
 * the following bundles have to be deployed:
- * org.jboss.spec.javax.transaction.jboss-transaction-api_1.1_spec
- * org.jboss.spec.javax.ejb.jboss-ejb-api_3.1_spec
- * javax.xml.jaxrpc-api-osgi
- * org.jboss.logging.jboss-logging
-* the client library (osgi-remoting-ejb-jboss-client) has to be deployed unpacked
+ * `org.jboss.spec.javax.transaction.jboss-transaction-api_1.1_spec`
+ * `org.jboss.spec.javax.ejb.jboss-ejb-api_3.1_spec`
+ * `javax.xml.jaxrpc-api-osgi`
+ * `org.jboss.logging.jboss-logging`
+* the client library (`osgi-remoting-ejb-jboss-client`) has to be deployed unpacked
 
 OSGi Service Lookup
 -------------------
