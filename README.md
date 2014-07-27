@@ -38,18 +38,20 @@ Pros
 ----
 The advantages of this project are:
 * supports dynamic starting and stopping of EJB client bundles at run time
+* supports any OSGi runtime
 * with little effort support every EJB client library that uses JNDI can be supported
 * remote EJBs can be injected using [OSGi Declarative Services](http://wiki.osgi.org/wiki/Declarative_Services)
 * remote EJBs can be injected using [Eclipse 4 Dependency Injection](http://wiki.eclipse.org/Eclipse4/RCP/Dependency_Injection)
 * client code has no dependencies on EJB libraries
 * the look up of service proxies (can involve network access) is in its own thread to reduce impact on framework start up
+* unobtrusive on build process, just an additonal xml that can be placed flexibly
 
 In addition the following «OSGi smells» are avoided:
 * [buddy classloading](http://wiki.eclipse.org/Context_Class_Loader_Enhancements#Buddy_Class_Loading)
 * [DynamicImport-Package](http://wiki.osgi.org/wiki/DynamicImport-Package)
 * dependencies from the ejb-client JARs to the EJB client library
 * one huge bundle containing all ejb-client JARs
-* fragments
+* using fragments to make classes available to a bundle
 
 Cons
 ----
@@ -156,4 +158,10 @@ GlassFish client library is not yet implemented.
 Geronimo client library depends on [TOMEE-903](https://issues.apache.org/jira/browse/TOMEE-903) being fixed.
 
 An ESA (Enterprise Subsystem Archive) would be nice http://coderthoughts.blogspot.ch/2013/04/osgi-subsystems.html http://svn.apache.org/repos/asf/aries/trunk/esa-maven-plugin/pom.xml 
+
+Links
+-----
+
+* [OSGi Best Practices](http://wiki.osgi.org/wiki/Category:Best_Practices)
+* [OSGi and Start Levels](http://eclipsesource.com/blogs/2009/06/10/osgi-and-start-levels/)
 
