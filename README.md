@@ -86,7 +86,7 @@ There is support for starting with unauthenticated calls first, logging in and f
 * look up `com.github.marschall.osgi.remoting.ejb.api.ProxyFlusher`
 * call `com.github.marschall.osgi.remoting.ejb.api.ProxyFlusher#flushProxies()`
 * wait for method call to return
-* no need to re-lookup OSGi services, they stay valid and use authenticated calls not
+* no need to re-lookup OSGi services, they stay valid and use authenticated calls now
 
 Design Decisions/Trade Offs
 ---------------------------
@@ -102,7 +102,7 @@ Deploying
 ---------
 When deploying care has to be taken that that
 * the bundle `osgi-remoting-ejb-client` is started automatically
-* an implementation of `com.github.marschall.osgi.remoting.ejb.api.InitialContextService` (eg. `osgi-remoting-ejb-client`) is registered (eg. through Dynamic Services / Service Component Runtime)
+* an implementation of `com.github.marschall.osgi.remoting.ejb.api.InitialContextService` (eg. `osgi-remoting-ejb-jboss`) is registered (eg. through Dynamic Services / Service Component Runtime)
 
 Sample Client on Equinox
 ------------------------
