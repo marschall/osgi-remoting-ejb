@@ -2,12 +2,12 @@ OSGi Remoting EJB [![Build Status](https://travis-ci.org/marschall/osgi-remoting
 =================
 OSGi Remoting over EJB remoting
 
-The purpose of this project is allowing to call remote EJBs from within any OSGi container. The EJBs will be presented as (remote) OSGi services. This project does not implement any remoting protocol, instead it delegates to the corresponding, vendor dependent EJB client library.
+The purpose of this project is allowing to call remote EJBs from within any OSGi container. The EJB service interfaces will be presented as (remote) OSGi services. This project does not implement any remoting protocol, instead it delegates to the corresponding, vendor dependent EJB client library.
 
 At its core the what this project does is setting the thread context classloader (TCCL) to an appropriate classloader during
 * `new InitialContext()`
 * `InitialContext#lookup()`
-* method calls on objects retrieved trough the above JNDI look up (EJB service calls)
+* method calls on service proxies retrieved trough the above JNDI look up (EJB service calls)
 
 This makes it possible to run any EJB client library that builds on top of JNDI.
 
@@ -25,7 +25,7 @@ Contents
 --------
 This project includes the following components:
 * core, sever independent library that switches the TCCL and registers the OSGi services
-* Java 6 and 7 annotation processors that generate the required service.xml files for the ejb-client JARs
+* Java 6, 7 and 8 annotation processors that generate the required service.xml files for the ejb-client JARs
 * sample integration for JBoss
 * sample JBoss EJB client library bundle
 * sample EJB
@@ -59,12 +59,12 @@ Only one EJB client library is supported at runtime — starting, stopping and r
 
 Annotation Processor
 --------------------
-Both a Java 6 and a 7 annotation processor are provided that generate OSGi Remoting service.xml files that follow Java EE 6 portable JNDI syntax
+A Java 6, 7 and 8 annotation processor are provided that generate OSGi Remoting service.xml files that follow Java EE 6 portable JNDI syntax
 
 	app-name/module-name/bean-name!bean-interface
 
 To use the processor
-* a dependency on `com.github.marschall:osgi-remoting-ejb-processor6` or `com.github.marschall:osgi-remoting-ejb-processor7` with scope `provided` has to be specified in the EJB project
+* a dependency on `com.github.marschall:osgi-remoting-ejb-processor6`, `com.github.marschall:osgi-remoting-ejb-processor7` or  `com.github.marschall:osgi-remoting-ejb-processor8` with scope `provided` has to be specified in the EJB project
 * the processor argument `javax.ejb.module.name` has to be set to the module name
 * the processor argument `javax.ejb.application.name` has to be set to the application name
 
