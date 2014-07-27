@@ -28,7 +28,6 @@
     <module>glassfish</module>
     <module>glassfish-client</module>
     <module>geronimo</module>
-    <module>geronimo-client</module>
   </modules>
 
   <developers>
@@ -118,7 +117,7 @@
       <plugins>
         <plugin>
           <artifactId>maven-ear-plugin</artifactId>
-          <version>2.8</version>
+          <version>2.9.1</version>
         </plugin>
         <plugin>
           <artifactId>maven-ejb-plugin</artifactId>
@@ -127,12 +126,12 @@
         <plugin>
           <groupId>org.apache.felix</groupId>
           <artifactId>maven-bundle-plugin</artifactId>
-          <version>2.3.7</version>
+          <version>2.5.0</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-javadoc-plugin</artifactId>
-          <version>2.9</version>
+          <version>2.9.1</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -147,22 +146,22 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-source-plugin</artifactId>
-          <version>2.2.1</version>
+          <version>2.3</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-gpg-plugin</artifactId>
-          <version>1.4</version>
+          <version>1.5</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-release-plugin</artifactId>
-          <version>2.4.1</version>
+          <version>2.5</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-scm-plugin</artifactId>
-          <version>1.8.1</version>
+          <version>1.9.1</version>
         </plugin>
         <plugin>
           <groupId>org.jboss.jandex</groupId>
@@ -232,9 +231,7 @@
 
     <!-- JBoss dependency versions -->
 
-    <version.jboss.maven.plugin>7.3.Final</version.jboss.maven.plugin>
-
-    <version.jboss.as>7.1.1.Final</version.jboss.as>
+    <version.jboss.as>7.2.0.Final</version.jboss.as>
     <!-- Alternatively, comment out the above line, and un-comment the line 
       below to use version 7.2.0.Alpha1-redhat-4 which is a release certified to 
       work with JBoss EAP 6. It requires you have access to the JBoss EAP 6 maven 

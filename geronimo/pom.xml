@@ -23,6 +23,29 @@
       <!-- will be only used in OSGi environment where import-package will kick in -->
       <scope>provided</scope>
     </dependency>
+    <!-- 
+    client libraries, all bundles
+    <dependency>
+      <groupId>org.apache.openejb</groupId>
+      <artifactId>openejb-client</artifactId>
+      <version>4.5.2</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.geronimo.specs</groupId>
+      <artifactId>geronimo-osgi-locator</artifactId>
+      <version>1.1</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.geronimo.specs</groupId>
+      <artifactId>geronimo-osgi-registry</artifactId>
+      <version>1.1</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.geronimo.framework</groupId>
+      <artifactId>geronimo-security</artifactId>
+      <version>3.0.0</version>
+    </dependency>
+     -->
   </dependencies>
 
   <build>

@@ -2,12 +2,12 @@ OSGi Remoting EJB [![Build Status](https://travis-ci.org/marschall/osgi-remoting
 =================
 OSGi Remoting over EJB remoting
 
-The purpose of this project is allowing to call remote EJBs from within any OSGi container. The EJBs will be presented as (remote) OSGi services. This project does not implement any remoting protocol, instead it delegates to the corresponding, vendor dependent EJB client library.
+The purpose of this project is allowing to call remote EJBs from within any OSGi container. The EJB service interfaces will be presented as (remote) OSGi services. This project does not implement any remoting protocol, instead it delegates to the corresponding, vendor dependent EJB client library.
 
 At its core the what this project does is setting the thread context classloader (TCCL) to an appropriate classloader during
 * `new InitialContext()`
 * `InitialContext#lookup()`
-* method calls on objects retrieved trough the above JNDI look up (EJB service calls)
+* method calls on service proxies retrieved trough the above JNDI look up (EJB service calls)
 
 This makes it possible to run any EJB client library that builds on top of JNDI.
 
@@ -25,7 +25,7 @@ Contents
 --------
 This project includes the following components:
 * core, sever independent library that switches the TCCL and registers the OSGi services
-* Java 6 and 7 annotation processors that generate the required service.xml files for the ejb-client JARs
+* Java 6, 7 and 8 annotation processors that generate the required service.xml files for the ejb-client JARs
 * sample integration for JBoss
 * sample JBoss EJB client library bundle
 * sample EJB
@@ -38,18 +38,20 @@ Pros
 ----
 The advantages of this project are:
 * supports dynamic starting and stopping of EJB client bundles at run time
+* supports any OSGi runtime
 * with little effort support every EJB client library that uses JNDI can be supported
 * remote EJBs can be injected using [OSGi Declarative Services](http://wiki.osgi.org/wiki/Declarative_Services)
 * remote EJBs can be injected using [Eclipse 4 Dependency Injection](http://wiki.eclipse.org/Eclipse4/RCP/Dependency_Injection)
 * client code has no dependencies on EJB libraries
 * the look up of service proxies (can involve network access) is in its own thread to reduce impact on framework start up
+* unobtrusive on build process, just an additonal xml that can be placed flexibly
 
 In addition the following «OSGi smells» are avoided:
 * [buddy classloading](http://wiki.eclipse.org/Context_Class_Loader_Enhancements#Buddy_Class_Loading)
 * [DynamicImport-Package](http://wiki.osgi.org/wiki/DynamicImport-Package)
 * dependencies from the ejb-client JARs to the EJB client library
 * one huge bundle containing all ejb-client JARs
-* fragments
+* using fragments to make classes available to a bundle
 
 Cons
 ----
@@ -57,12 +59,12 @@ Only one EJB client library is supported at runtime — starting, stopping and r
 
 Annotation Processor
 --------------------
-Both a Java 6 and a 7 annotation processor are provided that generate OSGi Remoting service.xml files that follow Java EE 6 portable JNDI syntax
+A Java 6, 7 and 8 annotation processor are provided that generate OSGi Remoting service.xml files that follow Java EE 6 portable JNDI syntax
 
 	app-name/module-name/bean-name!bean-interface
 
 To use the processor
-* a dependency on `com.github.marschall:osgi-remoting-ejb-processor6` or `com.github.marschall:osgi-remoting-ejb-processor7` with scope `provided` has to be specified in the EJB project
+* a dependency on `com.github.marschall:osgi-remoting-ejb-processor6`, `com.github.marschall:osgi-remoting-ejb-processor7` or  `com.github.marschall:osgi-remoting-ejb-processor8` with scope `provided` has to be specified in the EJB project
 * the processor argument `javax.ejb.module.name` has to be set to the module name
 * the processor argument `javax.ejb.application.name` has to be set to the application name
 
@@ -84,7 +86,7 @@ There is support for starting with unauthenticated calls first, logging in and f
 * look up `com.github.marschall.osgi.remoting.ejb.api.ProxyFlusher`
 * call `com.github.marschall.osgi.remoting.ejb.api.ProxyFlusher#flushProxies()`
 * wait for method call to return
-* no need to re-lookup OSGi services, they stay valid and use authenticated calls not
+* no need to re-lookup OSGi services, they stay valid and use authenticated calls now
 
 Design Decisions/Trade Offs
 ---------------------------
@@ -100,7 +102,7 @@ Deploying
 ---------
 When deploying care has to be taken that that
 * the bundle `osgi-remoting-ejb-client` is started automatically
-* an implementation of `com.github.marschall.osgi.remoting.ejb.api.InitialContextService` (eg. `osgi-remoting-ejb-client`) is registered (eg. through Dynamic Services / Service Component Runtime)
+* an implementation of `com.github.marschall.osgi.remoting.ejb.api.InitialContextService` (eg. `osgi-remoting-ejb-jboss`) is registered (eg. through Dynamic Services / Service Component Runtime)
 
 Sample Client on Equinox
 ------------------------
@@ -111,11 +113,11 @@ JBoss
 To make the JBoss client libraries provided with this project work the following steps have to be taken:
 * the following VM argument has to be set `-Dorg.osgi.framework.system.packages.extra=sun.nio.ch,sun.refelect`
 * the following bundles have to be deployed:
- * org.jboss.spec.javax.transaction.jboss-transaction-api_1.1_spec
- * org.jboss.spec.javax.ejb.jboss-ejb-api_3.1_spec
- * javax.xml.jaxrpc-api-osgi
- * org.jboss.logging.jboss-logging
-* the client library (osgi-remoting-ejb-jboss-client) has to be deployed unpacked
+ * `org.jboss.spec.javax.transaction.jboss-transaction-api_1.1_spec`
+ * `org.jboss.spec.javax.ejb.jboss-ejb-api_3.1_spec`
+ * `javax.xml.jaxrpc-api-osgi`
+ * `org.jboss.logging.jboss-logging`
+* the client library (`osgi-remoting-ejb-jboss-client`) has to be deployed unpacked
 
 OSGi Service Lookup
 -------------------
@@ -142,6 +144,8 @@ You must not make any service calls from an OSGi callback thread (`BundleListene
 You should not make any service calls from the UI thread.
 
 Service proxies can only be registered once the sole `InitialContextService` is registered because it's required for defining proper class loader.
+
+The sample does work only with JBoss remote EJB, not with remote JNDI. The sample EJB does only work with JBoss to make it work with other servers `<Aorg.jboss.distinct.name />` has to be commented out.
 
 Customization
 -------------
