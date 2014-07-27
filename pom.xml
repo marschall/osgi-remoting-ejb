@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.github.marschall</groupId>
   <artifactId>osgi-remoting-ejb-parent</artifactId>
-  <version>0.2.0-SNAPSHOT</version>
+  <version>0.2.0</version>
   <packaging>pom</packaging>
   <name>OSGi Remoting EJB</name>
   <description>An OSGi remoting implementaiton that delegates to EJB Remtoing</description>
@@ -15,7 +15,7 @@
     <connection>scm:git:git@github.com:marschall/osgi-remoting-ejb.git</connection>
     <developerConnection>scm:git:git@github.com:marschall/osgi-remoting-ejb.git</developerConnection>
     <url>${project.url}</url>
-    <tag>HEAD</tag>
+    <tag>osgi-remoting-ejb-parent-0.2.0</tag>
   </scm>
 
   <modules>
