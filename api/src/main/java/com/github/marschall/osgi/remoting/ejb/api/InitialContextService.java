@@ -21,7 +21,7 @@ public interface InitialContextService {
    * If {@code null} is returned then
    * {@link javax.naming.InitialContext#InitialContext()} is invoked.
    * 
-   * @see javax.naming.InitialContext.InitialContext(Hashtable<?, ?>)
+   * @see javax.naming.InitialContext
    * @return  the environment used to create the initial context
    */
   public Hashtable<?,?> getEnvironment();
