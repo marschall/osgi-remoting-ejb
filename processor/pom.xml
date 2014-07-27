@@ -14,6 +14,7 @@
     <module>processor-core</module>
     <module>processor6</module>
     <module>processor7</module>
+    <module>processor8</module>
   </modules>
 
 </project>
